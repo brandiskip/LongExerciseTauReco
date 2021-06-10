@@ -33,7 +33,7 @@ trees = {}
 for fname in fnames:
     fullname = floc+fname
     tname = "tree"
-    displaced = fname.split("_")[2]
+    displaced = fname.split("_")[2].split("/")[0]
     trees[displaced] = getTree(fullname, tname)
 
  
@@ -53,9 +53,9 @@ for v in variables:
         hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1')         
         hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1 & tau_reco_pt>0')
                 
-print(type(hists[v][displaced]["num"]))        
+        print(type(hists[v][displaced]["num"]))        
 
-'''
+
 eff = {}        
 for v in variables:
     
@@ -64,4 +64,4 @@ for v in variables:
         eff[v][displaced] = ROOT.TEfficiency(hists[v][displaced]["num"], hists[v][displaced]["den"])
   
     plotEfficiencies(eff[v], "h_%s.pdf"%v, xlabel="transverse plane displacement (cm)", ylabel="reconstruction efficiency")
-'''
+
