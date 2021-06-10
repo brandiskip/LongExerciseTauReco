@@ -38,7 +38,7 @@ for fname in fnames:
 
  
 variables = {
-        "tau_gen_lxy": {"varname": "tau_gen_lxy", "nbins": 10, "xmin": 0, "xmax": 10, "label": "displacement"},
+        "lxy": {"varname": "tau_gen_lxy", "nbins": 10, "xmin": 0, "xmax": 10, "label": "displacement"},
             }
    
 print("test")
@@ -48,21 +48,20 @@ for v in variables:
 
     hists[v] = {}
     for displaced in trees:
-        if ('tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1'):
-            if ('tau_reco_pt>0'):
-                print("cat")
-                hists[v][displaced] = getHist(trees[displaced], "h_%s_%s"%(v,displaced), v, getBinStr(variables[v]), sel_name="num")
-                trees[displaced].Draw('tau_gen_lxy >> num', 'tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1 & tau_reco_pt>0')
-            else :  
-                hists[v][displaced] = getHist(trees[displaced], "h_%s_%s"%(v,displaced), v, getBinStr(variables[v]), sel_name="den")
-                trees[displaced].Draw('tau_gen_lxy >> den', 'tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1')
-print("test 2")        
 
+        hists[v][displaced] = {}
+        hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1')         
+        hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1 & tau_reco_pt>0')
+                
+print(type(hists[v][displaced]["num"]))        
+
+'''
 eff = {}        
-for e in trees:
-    eff[e] = ROOT.TEfficiency(num, den)
+for v in variables:
+    
+    eff[v] = {}
+    for displaced in trees:
+        eff[v][displaced] = ROOT.TEfficiency(hists[v][displaced]["num"], hists[v][displaced]["den"])
   
-    plotEfficiencies(eff[e], "h_%s.pdf"%e, xlabel="transverse plane displacement (cm)", ylabel="reconstruction efficiency")
-
-print("test 3")
-
+    plotEfficiencies(eff[v], "h_%s.pdf"%v, xlabel="transverse plane displacement (cm)", ylabel="reconstruction efficiency")
+'''
