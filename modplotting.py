@@ -37,7 +37,6 @@ for fname in fnames:
     trees[displaced] = getTree(fullname, tname)
 
  
-
 variables = {
         "tau_gen_lxy": {"varname": "tau_gen_lxy", "nbins": 10, "xmin": 0, "xmax": 10, "label": "displacement"},
             }
@@ -49,29 +48,21 @@ for v in variables:
 
     hists[v] = {}
     for displaced in trees:
-        hists[v][displaced] = getHist(trees[displaced], "h_%s_%s"%(v,displaced), v, getBinStr(variables[v]))
+        if ('tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1'):
+            if ('tau_reco_pt>0'):
+                print("cat")
+                hists[v][displaced] = getHist(trees[displaced], "h_%s_%s"%(v,displaced), v, getBinStr(variables[v]), sel_name="num")
+                trees[displaced].Draw('tau_gen_lxy >> num', 'tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1 & tau_reco_pt>0')
+            else :  
+                hists[v][displaced] = getHist(trees[displaced], "h_%s_%s"%(v,displaced), v, getBinStr(variables[v]), sel_name="den")
+                trees[displaced].Draw('tau_gen_lxy >> den', 'tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1')
+print("test 2")        
 
+eff = {}        
+for e in trees:
+    eff[e] = ROOT.TEfficiency(num, den)
   
-print("test 2")
+    plotEfficiencies(eff[e], "h_%s.pdf"%e, xlabel="transverse plane displacement (cm)", ylabel="reconstruction efficiency")
 
+print("test 3")
 
-# Everything below from old code
-'''
-histo_den = ROOT.TH1F('den', 'den', 10, 0, 10)
-histo_num = ROOT.TH1F('num', 'num', 10, 0, 10)
-
-trees[displaced].Draw('tau_gen_lxy >> den', 'tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1')
-trees[displaced].Draw('tau_gen_lxy >> num', 'tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1 & tau_reco_pt>0')
-
-c = ROOT.TCanvas("num")
-c = ROOT.TCanvas("den")
-c.cd()
-eff = ROOT.TEfficiency(histo_num, histo_den)
-eff.SetTitle('unmodified displaced #tau_{h}^{gen} ;transverse plane displacement (cm) ; reconstruction efficiency')
-eff.SetMarkerStyle(8)
-eff.Draw('AB')
-
-c.SaveAs('reco_efficiency_{}.pdf'.format(sample))
-c.SaveAs('reco_efficiency_{}.png'.format(sample))
-c.Clear()
-'''
