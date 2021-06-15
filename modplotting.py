@@ -8,6 +8,7 @@ import sys
 import argparse
 import cms_style
 import time
+from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
 
 execfile("basic_plotting.py")
 
@@ -36,13 +37,15 @@ for fname in fnames:
     displaced = fname.split("_")[2].split("/")[0]
     trees[displaced] = getTree(fullname, tname)
 
+nameToInt('kOneProng0PiZero')
  
+print("here")
+
 variables = {
-        "lxy": {"varname": "tau_gen_lxy", "nbins": 10, "xmin": 0, "xmax": 10, "label": "displacement"},
+        "lxy":       {"varname": "tau_gen_lxy", "nbins": 20, "xmin": 0, "xmax": 20, "label": "displacement"},
+        
             }
    
-print("test")
-
 hists = {}
 for v in variables:
 
@@ -50,8 +53,8 @@ for v in variables:
     for displaced in trees:
 
         hists[v][displaced] = {}
-        hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1')         
-        hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 & abs(tau_gen_vis_eta)<2.1 & tau_reco_pt>0')
+        hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1')         
+        hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0')
                 
         print(type(hists[v][displaced]["num"]))        
 
