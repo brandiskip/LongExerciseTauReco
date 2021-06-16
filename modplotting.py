@@ -37,15 +37,17 @@ for fname in fnames:
     displaced = fname.split("_")[2].split("/")[0]
     trees[displaced] = getTree(fullname, tname)
 
-nameToInt('kOneProng0PiZero')
- 
-print("here")
 
 variables = {
-        "lxy":       {"varname": "tau_gen_lxy", "nbins": 20, "xmin": 0, "xmax": 20, "label": "displacement"},
-        
+        "lxy": {"varname": "tau_gen_lxy", "nbins": 20, "xmin": 0, "xmax": 20, "label": "displacement"},
             }
-   
+
+# To get index of decay mode
+prong = tauDecayModes.nameToInt('kOneProng0PiZero')
+print(prong)
+
+
+
 hists = {}
 for v in variables:
 
@@ -53,8 +55,14 @@ for v in variables:
     for displaced in trees:
 
         hists[v][displaced] = {}
-        hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1')         
-        hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0')
+        
+        # Plotting 1-prong decay
+        hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4 && tau_reco_decaymode >= 0 && tau_reco_decaymode <= 4')         
+        hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4 && tau_reco_pt>0 && tau_reco_decaymode >= 0 && tau_reco_decaymode <= 4')
+
+        #Plotting 3-prong decay
+        #hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 10 && tau_gen_decaymode <= 14 && tau_reco_decaymode >= 10 && tau_reco_decaymode <= 14')         
+        #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0 && tau_gen_decaymode >= 10 && tau_gen_decaymode <= 14 && tau_reco_decaymode >= 10 && tau_reco_decaymode <= 14')
                 
         print(type(hists[v][displaced]["num"]))        
 
@@ -67,4 +75,5 @@ for v in variables:
         eff[v][displaced] = ROOT.TEfficiency(hists[v][displaced]["num"], hists[v][displaced]["den"])
   
     plotEfficiencies(eff[v], "h_%s.pdf"%v, xlabel="transverse plane displacement (cm)", ylabel="reconstruction efficiency")
+
 
