@@ -44,19 +44,19 @@ if 'HNL' in sample and 'Dirac' in sample:  mom_pdgId = 9990012
 # initialise output files to save the flat ntuples
 outfile_gen = ROOT.TFile('tau_gentau_tuple_{}_{}.root'.format(sample,ifile), 'recreate')
 ntuple_gen = ROOT.TNtuple('tree', 'tree', ':'.join(branches))
-tofill_gen = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all branches to unphysical -99       
+tofill_gen = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all branches to unphysical -99
 
 # outfile_jet = ROOT.TFile('tau_jet_tuple_{}_{}.root'.format(sample,ifile), 'recreate')
 # ntuple_jet = ROOT.TNtuple('tree', 'tree', ':'.join(branches))
-# tofill_jet = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all branches to unphysical -99       
+# tofill_jet = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all branches to unphysical -99
 
 ##########################################################################################
 # Get ahold of the events
-f = open('%s_filelist.txt'%args.sample)
-infile=f.readlines()[ifile]
+#f = open('%s_filelist.txt'%args.sample)
+#infile=f.readlines()[ifile]
 
-events = Events('root://cms-xrd-global.cern.ch/'+infile) # make sure this corresponds to your file name!
-# events = Events('{}_miniAOD_rerunTauRECO.root'.format(sample)) # make sure this corresponds to your file name!
+#events = Events('/afs/cern.ch/user/b/bskipwor/630568A5-A778-324C-8DD4-7A72EDB74DDB.root') # make sure this corresponds to your file name!
+events = Events('/eos/user/b/bskipwor/eleventh_5_run.root'.format(sample)) # make sure this corresponds to your file name!
 maxevents = -1 # max events to process
 totevents = events.size() # total number of events in the files
 
@@ -67,7 +67,7 @@ def isAncestor(a, p):
         if isAncestor(a,p.mother(i)):
             return True
     return False
-    
+
 ##########################################################################################
 # instantiate the handles to the relevant collections.
 # Do this *outside* the event loop
@@ -75,7 +75,8 @@ def isAncestor(a, p):
 # edmDumpEventContent outputFULL.root
 
 # PAT taus
-label_taus = ('slimmedTaus', '', 'PAT')
+#label_taus = ('slimmedTaus', '', 'PAT')
+label_taus = ('selectedPatTaus', '', 'TAURECO')
 handle_taus = Handle('std::vector<pat::Tau>')
 # PAT jets
 label_jets = ('slimmedJets', '', 'PAT')
@@ -92,6 +93,12 @@ label_l1  = ('caloStage2Digis','Tau','RECO')
 # L1 jet
 handle_l1j = Handle('BXVector<l1t::Jet>')
 label_l1j  = ('caloStage2Digis','Jet','RECO')
+# lost tracks
+label_lost = ('lostTracks', '', 'PAT')
+handle_lost = Handle('std::vector<pat::PackedCandidate>')
+# packed PFCandidates
+label_packed = ('packedPFCandidates')
+handle_packed = Handle('std::vector<pat::PackedCandidate')
 
 # instantiate the handles to the relevant collections.
 # handles = OrderedDict()
@@ -101,7 +108,7 @@ label_l1j  = ('caloStage2Digis','Jet','RECO')
 # handles['vertices'      ] = ('offlineSlimmedPrimaryVertices'   , Handle('std::vector<reco::Vertex>'))
 # handles['l1_taus'       ] = (('caloStage2Digis', 'Tau', 'RECO'), Handle('BXVector<l1t::Tau>'))
 # handles['l1_jets'       ] = (('caloStage2Digis', 'Jet', 'RECO'), Handle('BXVector<l1t::Jet>'))
-# 
+#
 ##########################################################################################
 # example histogram
 histos = OrderedDict()
@@ -112,15 +119,15 @@ histos['pull_pt'].GetYaxis().SetTitle('counts')
 ##########################################################################################
 # start looping on the events
 for i, ev in enumerate(events):
-    
+
     ######################################################################################
     # controls on the events being processed
     if maxevents>0 and i>maxevents:
         break
-        
+
     if i%100==0:
         print '===> processing %d / %d event' %(i, totevents)
-    
+
 #     for k, v in handles.iteritems():
 #         ev.getByLabel(v[0], v[1])
 #         setattr(ev, k, v[1].product())
@@ -129,15 +136,15 @@ for i, ev in enumerate(events):
     # access the taus
     ev.getByLabel(label_taus, handle_taus)
     taus = handle_taus.product()
-    
-    # loosely filter the reco taus 
+
+    # loosely filter the reco taus
     taus = [tau for tau in taus if tau.pt()>18.]
 
     ######################################################################################
     # access the jets
     ev.getByLabel(label_jets, handle_jets)
     jets = handle_jets.product()
-# 
+#
 #     # loosely filter jets
 #     jets = [jet for jet in jets if jet.pt()>18. and abs(jet.eta())<2.5]
 
@@ -145,12 +152,12 @@ for i, ev in enumerate(events):
     # access the vertices
     ev.getByLabel(label_vtx, handle_vtx)
     vertices = handle_vtx.product()
-    
+
     ######################################################################################
     # access the gen taus
     ev.getByLabel (label_gen, handle_gen)
     gen_particles = handle_gen.product()
-    
+
     # select only hadronically decaying taus
     gen_taus = [pp for pp in gen_particles if abs(pp.pdgId())==15 and \
                 pp.status()==2 and isGenHadTau(pp)]
@@ -161,12 +168,28 @@ for i, ev in enumerate(events):
                                                       if abs(d.pdgId()) not in [12, 14, 16]])
 
     ######################################################################################
+    # access the lost tracks
+    ev.getByLabel(label_lost, handle_lost)
+    lost = handle_lost.product()
+    
+    # only keep pion candidates
+    lost_tracks = [ll for ll in lost if abs(pp.pdgId())==211]
+
+    ######################################################################################
+    # access packed PFCandidates
+    ev.getByLabel(label_packed, handle_packed)
+    packed = handle_packed.product()
+    
+    # only keep pion candidates
+    lost_tracks = [ff for ff in packed if abs(pp.pdgId())==211]
+
+    ######################################################################################
     # match reco taus to gen taus
     for tt in taus    : tt.gen_tau  = None # first initialise the matching to None
     for gg in gen_taus: gg.reco_tau = None # first initialise the matching to None
-    
+
     gen_taus_copy = gen_taus # we'll cyclically remove any gen taus that gets matched
-    
+
     for tt in taus:
         matches = [gg for gg in gen_taus_copy if deltaR(tt.p4(), gg.visp4)<0.3]
         if not len(matches):
@@ -180,9 +203,9 @@ for i, ev in enumerate(events):
     ######################################################################################
     # match reco taus to reco jets
 #     for jj in jets : jj.tau = None # first initialise the matching to None
-# 
+#
 #     taus_copy = taus # we'll cyclically remove any tau that gets matched
-# 
+#
 #     for jj in jets:
 #         matches = [tt for tt in taus_copy if deltaR(jj.p4(), tt.p4())<0.3]
 #         if not len(matches):
@@ -203,7 +226,7 @@ for i, ev in enumerate(events):
     # find ancestor
 #     print 'event', i
     c_const = 299.792458
-    for gg in gen_taus : 
+    for gg in gen_taus :
         gg.lxy   = -9999. # first initialise to None
         gg.myvx  = -9999. # first initialise to None
         gg.myvy  = -9999. # first initialise to None
@@ -214,8 +237,8 @@ for i, ev in enumerate(events):
         gg.mom_mass = -9999. # first initialise to None
 
     for gg in gen_taus:
-        tau_moms_tmp = [imom for imom in gen_particles if isAncestor(imom, gg)]
-        for imom in tau_moms_tmp:  print imom.pdgId()
+        #tau_moms_tmp = [imom for imom in gen_particles if isAncestor(imom, gg)]
+        #for imom in tau_moms_tmp:  print imom.pdgId()
         tau_moms = [imom for imom in gen_particles if isAncestor(imom, gg) and abs(imom.pdgId())==mom_pdgId]
         if len(tau_moms)>0 and tau_moms[0]!= None:
             bestmom = tau_moms[0]
@@ -228,13 +251,13 @@ for i, ev in enumerate(events):
             vectorP = np.array([gg.px(), gg.py(), 0])
             vectorL = np.array([gg.vx()-bestmom.vx(), gg.vy()-bestmom.vy(), 0])
             gg.cosxy = vectorL.dot(vectorP)/((np.linalg.norm(vectorL) * np.linalg.norm(vectorP)))
-            
+
             l3d = sqrt(pow(gg.vx()-bestmom.vx(),2) + pow(gg.vy()-bestmom.vy(),2) + pow(gg.vz()-bestmom.vz(),2))
 #             pdb.set_trace()
             gg.momct    = c_const*l3d*bestmom.mass()/bestmom.p()
             gg.momct2d  = c_const*gg.lxy*bestmom.mass()/bestmom.pt()
             gg.mom_mass = bestmom.mass()
-           
+
         else:
             gg.lxy    = -9999.
             gg.myvx   = -9999.
@@ -245,19 +268,19 @@ for i, ev in enumerate(events):
             gg.momct2d  = -9999.
             gg.mom_mass = -9999.
 
-            
+
 
 #       math::XYZVector pperp(refMuP->px() + refMuM->px(), refMuP->py() + refMuM->py(), 0.);
-# 
+#
 #       GlobalPoint displacementFromBeamspot(-1*((bs.x0() - mumuVertex.position().x()) + (mumuVertex.position().z() - bs.z0()) * bs.dxdz()),
 #                                            -1*((bs.y0() - mumuVertex.position().y()) + (mumuVertex.position().z() - bs.z0()) * bs.dydz()), 0);
-#      
+#
 #       double LxyJpsi        = displacementFromBeamspot.perp();
 #       reco::Vertex::Point vperp(displacementFromBeamspot.x(),displacementFromBeamspot.y(),0.);
 #       double cosJpsiXY      = vperp.Dot(pperp)/(vperp.R()*pperp.R());
-# 
-# 
-    
+#
+#
+
     ######################################################################################
     # access the l1 taus
     ev.getByLabel (label_l1, handle_l1)
@@ -269,9 +292,9 @@ for i, ev in enumerate(events):
     # match reco taus to gen taus
     for l1 in l1_taus : l1.gen_tau  = None # first initialise the matching to None
     for gg in gen_taus: gg.l1_tau   = None # first initialise the matching to None
-    
+
     gen_taus_copy = gen_taus # we'll cyclically remove any gen taus that gets matched
-    
+
     for l1 in l1_taus:
         matches = [gg for gg in gen_taus_copy if deltaR(l1.p4(), gg.visp4)<0.3]
         ave_matches = len(matches)
@@ -295,9 +318,9 @@ for i, ev in enumerate(events):
     # match reco jets to gen taus
     for l1 in l1_jets : l1.gen_tau  = None # first initialise the matching to None
     for gg in gen_taus: gg.l1_jet   = None # first initialise the matching to None
-    
+
     gen_taus_copy = gen_taus # we'll cyclically remove any gen taus that gets matched
-    
+
     for l1 in l1_jets:
         matches = [gg for gg in gen_taus_copy if deltaR(l1.p4(), gg.visp4)<0.3]
         ave_matches = len(matches)
@@ -328,8 +351,11 @@ for i, ev in enumerate(events):
             tofill_gen['tau_reco_phi'      ] = gg.reco_tau.phi()
             tofill_gen['tau_reco_charge'   ] = gg.reco_tau.charge()
             tofill_gen['tau_reco_decaymode'] = gg.reco_tau.decayMode()
+            tofill_gen['tau_reco_ip3d'     ] = gg.reco_tau.ip3d()
+            tofill_gen['tau_reco_dxy'      ] = gg.reco_tau.dxy()
+            tofill_gen['tau_reco_pixel'    ] = gg.reco_tau.leadChargedHadrCand().numberOfPixelHits()
         if hasattr(gg, 'l1_tau') and gg.l1_tau:
-#             tofill_gen['tau_l1_mass'     ] = gg.reco_tau.mass()
+#           tofill_gen['tau_l1_mass'     ] = gg.reco_tau.mass()
             tofill_gen['tau_l1_pt'       ] = gg.l1_tau.pt()
             tofill_gen['tau_l1_eta'      ] = gg.l1_tau.eta()
             tofill_gen['tau_l1_phi'      ] = gg.l1_tau.phi()
