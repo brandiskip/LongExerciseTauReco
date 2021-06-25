@@ -162,6 +162,7 @@ for i, ev in enumerate(events):
     gen_taus = [pp for pp in gen_particles if abs(pp.pdgId())==15 and \
                 pp.status()==2 and isGenHadTau(pp)]
 
+
     # determine gen decaymode
     for gg in gen_taus:
         gg.decayMode = tauDecayModes.genDecayModeInt([d for d in finalDaughters(gg) \
@@ -179,9 +180,16 @@ for i, ev in enumerate(events):
     # access packed PFCandidates
     ev.getByLabel(label_packed, handle_packed)
     packed = handle_packed.product()
-    
+
     # only keep pion candidates
-    lost_tracks = [ff for ff in packed if abs(pp.pdgId())==211]
+    packed_tracks = [ff for ff in packed if abs(pp.pdgId())==211]
+
+    ######################################################################################
+    # add together lost tracks and packed PFCandidates
+    # this has been the only way I have been able to add these together however I am afraid
+    # by using len, I am losing important information and I don't know how to match it 
+    # to the gen taus
+    comtracks = [len(lost_tracks), len(packed_tracks)]
 
     ######################################################################################
     # match reco taus to gen taus
@@ -214,6 +222,10 @@ for i, ev in enumerate(events):
 #         bestmatch = matches[0]
 #         jj.tau = bestmatch
 #         taus_copy = [tt for tt in taus_copy if tt != bestmatch]
+
+    ######################################################################################
+    # match combined lost and PFCandidate tracks to gen taus
+    
 
     ######################################################################################
     # fill histograms
