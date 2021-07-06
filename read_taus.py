@@ -169,29 +169,6 @@ for i, ev in enumerate(events):
                                                       if abs(d.pdgId()) not in [12, 14, 16]])
 
     ######################################################################################
-    # access the lost tracks
-    ev.getByLabel(label_lost, handle_lost)
-    lost = handle_lost.product()
-    
-    # only keep pion candidates
-    lost_tracks = [ll for ll in lost if abs(pp.pdgId())==211]
-
-    ######################################################################################
-    # access packed PFCandidates
-    ev.getByLabel(label_packed, handle_packed)
-    packed = handle_packed.product()
-
-    # only keep pion candidates
-    packed_tracks = [ff for ff in packed if abs(pp.pdgId())==211]
-
-    ######################################################################################
-    # add together lost tracks and packed PFCandidates
-    # this has been the only way I have been able to add these together however I am afraid
-    # by using len, I am losing important information and I don't know how to match it 
-    # to the gen taus
-    comtracks = [len(lost_tracks), len(packed_tracks)]
-
-    ######################################################################################
     # match reco taus to gen taus
     for tt in taus    : tt.gen_tau  = None # first initialise the matching to None
     for gg in gen_taus: gg.reco_tau = None # first initialise the matching to None
@@ -222,10 +199,6 @@ for i, ev in enumerate(events):
 #         bestmatch = matches[0]
 #         jj.tau = bestmatch
 #         taus_copy = [tt for tt in taus_copy if tt != bestmatch]
-
-    ######################################################################################
-    # match combined lost and PFCandidate tracks to gen taus
-    
 
     ######################################################################################
     # fill histograms
@@ -346,6 +319,42 @@ for i, ev in enumerate(events):
         gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
 
     ######################################################################################
+    # access the lost tracks
+    ev.getByLabel(label_lost, handle_lost)
+    lost = handle_lost.product()
+    
+    # only keep pion candidates
+    lost_tracks = [ll for ll in lost if abs(pp.pdgId())==211]
+
+    ######################################################################################
+    # access packed PFCandidates
+    ev.getByLabel(label_packed, handle_packed)
+    packed = handle_packed.product()
+
+    # only keep pion candidates
+    packed_tracks = [ff for ff in packed if abs(pp.pdgId())==211]
+
+    ######################################################################################
+    # add together lost tracks and packed PFCandidates
+    comtracks = lost_tracks + packed_tracks
+
+    # match combined lost and PFCandidate tracks to gen taus
+    for cc in comtracks : cc.gen_tau = None # first initialise the matching to None
+    for gg in gen_taus  : gg.com_tau = None # first initialise the matching to None
+
+    gen_taus_copy = gen_taus # we'll cyclically remove any gen taus that gets matched
+
+    for cc in taus:
+        matches = [gg for gg in gen_taus_copy if deltaR(cc.p4(), gg.visp4)<0.3]
+        if not len(matches):
+            continue
+        matches.sort(key = lambda gg : deltaR(cc.p4(), gg.visp4))
+        bestmatch = matches[0]
+        cc.gen_tau = bestmatch
+        bestmatch.com_tau = cc
+        gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
+
+    ######################################################################################
     # fill the ntuple: each gen tau makes an entry
     for gg in gen_taus:
         for k, v in tofill_gen.iteritems(): tofill_gen[k] = -99. # initialise before filling
@@ -380,6 +389,13 @@ for i, ev in enumerate(events):
             tofill_gen['jet_l1_eta'      ] = gg.l1_jet.eta()
             tofill_gen['jet_l1_phi'      ] = gg.l1_jet.phi()
             tofill_gen['jet_l1_charge'   ] = gg.l1_jet.charge()
+
+        if hasattr(gg, 'com_tau') and gg.com_tau:
+            tofill_gen['tau_com_pt'       ] = gg.com_tau.pt()
+            tofill_gen['tau_com_eta'      ] = gg.com_tau.eta()
+            tofill_gen['tau_com_phi'      ] = gg.com_tau.phi()
+            tofill_gen['tau_com_charge'   ] = gg.com_tau.charge()
+#            tofill_gen['tau_com_pixel'    ] = gg.com_tau.numberOfPixelHits()
 
         tofill_gen['tau_gen_pt'        ] = gg.pt()
         tofill_gen['tau_gen_eta'       ] = gg.eta()
