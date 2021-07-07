@@ -28,9 +28,9 @@ sample = args.file
 # * pulls all files with that name
 floc = 'ntuples/'
 fnames = [
-	"taus_hnlSample_unmod/tau_gentau_tuple_HNL_M_10_*.root",
-	"taus_hnlSample_mod/tau_gentau_tuple_HNL_M_10_ReMINI_*.root",
-]
+	#"taus_hnlSample_unmod/tau_gentau_tuple_HNL_M_10_*.root",
+	"taus_hnlSample_mod/tau_gentau_tuple_HNL_M_10_ReMINI_2.root",
+    ]
 
 # definition to pull in files, "getTree" defined in basic_plotting.py
 trees = {}
@@ -42,7 +42,7 @@ for fname in fnames:
 
 # variable interested in plotting
 variables = {
-        "lxy": {"varname": "tau_gen_lxy", "nbins": 25, "xmin": 0, "xmax": 25, "label": "displacement"},
+        "lxy": {"varname": "tau_gen_lxy", "nbins": 20, "xmin": 0, "xmax": 20, "label": "displacement"},
             }
 
 # To get index of decay mode from PhysicsTools.Heppy.physicsutils.TauDecayModes
@@ -59,12 +59,20 @@ for v in variables:
         hists[v][displaced] = {}
 
         # Plotting with no prong cut
-        hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1')
-        hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0')
+        #hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1')
+        #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0')
 
-        # Plotting 1-prong decay
+        # Plotting lost tracks and packed PFcandidates
+        #hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1')
+        #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_com_pt>=0')
+
+        # Plotting 1-prong decay with reco_decaymodes
+        hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4')
+        hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>=0 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4 && tau_reco_decaymode >= 0 && tau_reco_decaymode <= 4')
+
+        # Plotting 1-prong decay with combined tracks
         #hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4')
-        #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4 && tau_reco_pt>0 && tau_reco_decaymode >= 0 && tau_reco_decaymode <= 4')
+        #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_com_pt>=0 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4')
 
         #Plotting 3-prong decay
         #hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 10 && tau_gen_decaymode <= 14')
@@ -78,8 +86,10 @@ for v in variables:
     eff[v] = {}
     for displaced in trees:
         eff[v][displaced] = ROOT.TEfficiency(hists[v][displaced]["num"], hists[v][displaced]["den"])
-
+            
     # "plotEfficiencies defined in basic_plotting.py"
     plotEfficiencies(eff[v], "h_%s.pdf"%v, xlabel="transverse plane displacement (cm)", ylabel="reconstruction efficiency")
+    
+    
 
 
