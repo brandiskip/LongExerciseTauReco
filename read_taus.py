@@ -56,8 +56,8 @@ tofill_gen = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all b
 #infile=f.readlines()[ifile]
 
 #events = Events('/afs/cern.ch/user/b/bskipwor/630568A5-A778-324C-8DD4-7A72EDB74DDB.root') # make sure this corresponds to your file name!
-events = Events('/eos/user/b/bskipwor/eleventh_5_run.root'.format(sample)) # make sure this corresponds to your file name!
-maxevents = -1 # max events to process
+events = Events('/eos/user/b/bskipwor/second_2_run.root'.format(sample)) # make sure this corresponds to your file name!
+maxevents = 100 # max events to process
 totevents = events.size() # total number of events in the files
 
 def isAncestor(a, p):
@@ -322,7 +322,7 @@ for i, ev in enumerate(events):
     # access the lost tracks
     ev.getByLabel(label_lost, handle_lost)
     lost = handle_lost.product()
-    
+
     # only keep pion candidates
     lost_tracks = [ll for ll in lost if abs(pp.pdgId())==211]
 
@@ -337,6 +337,8 @@ for i, ev in enumerate(events):
     ######################################################################################
     # add together lost tracks and packed PFCandidates
     comtracks = lost_tracks + packed_tracks
+    
+    print(len(comtracks)==len(lost_tracks)+len(packed_tracks))
 
     # match combined lost and PFCandidate tracks to gen taus
     for cc in comtracks : cc.gen_tau = None # first initialise the matching to None
@@ -344,7 +346,7 @@ for i, ev in enumerate(events):
 
     gen_taus_copy = gen_taus # we'll cyclically remove any gen taus that gets matched
 
-    for cc in taus:
+    for cc in comtracks:
         matches = [gg for gg in gen_taus_copy if deltaR(cc.p4(), gg.visp4)<0.3]
         if not len(matches):
             continue
