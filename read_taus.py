@@ -56,8 +56,8 @@ tofill_gen = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all b
 #infile=f.readlines()[ifile]
 
 #events = Events('/afs/cern.ch/user/b/bskipwor/630568A5-A778-324C-8DD4-7A72EDB74DDB.root') # make sure this corresponds to your file name!
-events = Events('/eos/user/b/bskipwor/second_2_run.root'.format(sample)) # make sure this corresponds to your file name!
-maxevents = 100 # max events to process
+events = Events('/eos/user/b/bskipwor/twelfth_5_run.root'.format(sample)) # make sure this corresponds to your file name!
+maxevents = -1 # max events to process
 totevents = events.size() # total number of events in the files
 
 def isAncestor(a, p):
@@ -324,7 +324,7 @@ for i, ev in enumerate(events):
     lost = handle_lost.product()
 
     # only keep pion candidates
-    lost_tracks = [ll for ll in lost if abs(pp.pdgId())==211]
+    lost_tracks = [ll for ll in lost if abs(ll.pdgId())==211]
 
     ######################################################################################
     # access packed PFCandidates
@@ -332,12 +332,12 @@ for i, ev in enumerate(events):
     packed = handle_packed.product()
 
     # only keep pion candidates
-    packed_tracks = [ff for ff in packed if abs(pp.pdgId())==211]
+    packed_tracks = [ff for ff in packed if abs(ff.pdgId())==211]
 
     ######################################################################################
     # add together lost tracks and packed PFCandidates
     comtracks = lost_tracks + packed_tracks
-    
+
     print(len(comtracks)==len(lost_tracks)+len(packed_tracks))
 
     # match combined lost and PFCandidate tracks to gen taus
