@@ -323,7 +323,7 @@ for i, ev in enumerate(events):
     ev.getByLabel(label_lost, handle_lost)
     lost = handle_lost.product()
 
-    # only keep pion candidates and where pt differs from gen by <20%
+    # only keep pion candidates
     lost_tracks = [ll for ll in lost if abs(ll.pdgId())==211]
 
     ######################################################################################
@@ -331,7 +331,7 @@ for i, ev in enumerate(events):
     ev.getByLabel(label_packed, handle_packed)
     packed = handle_packed.product()
 
-    # only keep pion candidates and where pt differs from gen by <20%
+    # only keep pion candidates
     packed_tracks = [ff for ff in packed if abs(ff.pdgId())==211]
 
     ######################################################################################
@@ -345,7 +345,7 @@ for i, ev in enumerate(events):
     gen_taus_copy = gen_taus # we'll cyclically remove any gen taus that gets matched
 
     for cc in comtracks:
-        matches = [gg for gg in gen_taus_copy if deltaR(cc.p4(), gg.visp4)<0.3 and abs(cc.pt() - gg.vispt())<0.30*gg.vispt()]
+        matches = [gg for gg in gen_taus_copy if deltaR(cc.p4(), gg.visp4)<0.3 and abs(cc.pt() - gg.vispt())<0.20*gg.vispt()]
         if not len(matches):
             continue
         matches.sort(key = lambda gg : deltaR(cc.p4(), gg.visp4))
