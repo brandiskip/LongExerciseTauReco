@@ -56,8 +56,8 @@ tofill_gen = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all b
 #infile=f.readlines()[ifile]
 
 #events = Events('/afs/cern.ch/user/b/bskipwor/630568A5-A778-324C-8DD4-7A72EDB74DDB.root') # make sure this corresponds to your file name!
-events = Events('/eos/user/b/bskipwor/fifth_5_run.root'.format(sample)) # make sure this corresponds to your file name!
-maxevents = -1 # max events to process
+events = Events('/eos/user/b/bskipwor/sixth_5_run.root'.format(sample)) # make sure this corresponds to your file name!
+maxevents = 100 # max events to process
 totevents = events.size() # total number of events in the files
 
 def isAncestor(a, p):
@@ -324,7 +324,7 @@ for i, ev in enumerate(events):
     lost = handle_lost.product()
 
     # only keep pion candidates and where pt differs from gen by <20%
-    lost_tracks = [ll for ll in lost if abs(ll.pdgId())==211 and abs(ll.pt() - gg.vispt())<0.2*gg.vispt()]
+    lost_tracks = [ll for ll in lost if abs(ll.pdgId())==211]
 
     ######################################################################################
     # access packed PFCandidates
@@ -332,7 +332,7 @@ for i, ev in enumerate(events):
     packed = handle_packed.product()
 
     # only keep pion candidates and where pt differs from gen by <20%
-    packed_tracks = [ff for ff in packed if abs(ff.pdgId())==211 and abs(ff.pt() - gg.vispt())<0.2*gg.vispt()]
+    packed_tracks = [ff for ff in packed if abs(ff.pdgId())==211]
 
     ######################################################################################
     # add together lost tracks and packed PFCandidates
@@ -345,7 +345,7 @@ for i, ev in enumerate(events):
     gen_taus_copy = gen_taus # we'll cyclically remove any gen taus that gets matched
 
     for cc in comtracks:
-        matches = [gg for gg in gen_taus_copy if deltaR(cc.p4(), gg.visp4)<0.3]
+        matches = [gg for gg in gen_taus_copy if deltaR(cc.p4(), gg.visp4)<0.3 and abs(cc.pt() - gg.vispt())<0.30*gg.vispt()]
         if not len(matches):
             continue
         matches.sort(key = lambda gg : deltaR(cc.p4(), gg.visp4))
