@@ -8,7 +8,7 @@ import ROOT
 from array import array
 from collections import OrderedDict
 from DataFormats.FWLite import Events, Handle
-from PhysicsTools.HeppyCore.utils.deltar import deltaR, deltaPhi
+from PhysicsTools.HeppyCore.utils.deltar import deltaR, deltaPhi, bestMatch
 from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
 from treeVariables import branches # here the ntuple branches are defined
 from utils import isGenHadTau, finalDaughters, printer # utility functions
@@ -57,7 +57,7 @@ tofill_gen = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all b
 
 #events = Events('/afs/cern.ch/user/b/bskipwor/630568A5-A778-324C-8DD4-7A72EDB74DDB.root') # make sure this corresponds to your file name!
 events = Events('/eos/user/b/bskipwor/sixth_5_run.root'.format(sample)) # make sure this corresponds to your file name!
-maxevents = 100 # max events to process
+maxevents = -1 # max events to process
 totevents = events.size() # total number of events in the files
 
 def isAncestor(a, p):
@@ -338,6 +338,25 @@ for i, ev in enumerate(events):
     # add together lost tracks and packed PFCandidates
     comtracks = lost_tracks + packed_tracks
 
+    ## skim comtracks collection to keep only PFcands that are "close" in dR and dPt from at least a gen tau
+    comtracks_matchable = []
+    for cc in comtracks:
+        found = False
+        for gg in gen_taus :
+            if found == False and (abs(cc.pt() - gg.vispt())<0.2*gg.vispt()) and ( deltaR(cc.p4(), gg.visp4)<0.5) :
+                comtracks_matchable.append(cc)
+                found = True
+
+    ## for each gen tau, find the PFCand that best matches in dR
+    for gg in gen_taus  : gg.up_com_tau = None # first initialise the matching to None
+    for gg in gen_taus:
+      bestcom = bestMatch(gg, comtracks_matchable )
+      if bestcom[0] != None:
+          print deltaR(bestcom[0],gg)
+          gg.up_com_tau = bestcom[0]
+
+
+    ## original version, using same approach as for reco_taus
     # match combined lost and PFCandidate tracks to gen taus
     for cc in comtracks : cc.gen_tau = None # first initialise the matching to None
     for gg in gen_taus  : gg.com_tau = None # first initialise the matching to None
@@ -353,6 +372,7 @@ for i, ev in enumerate(events):
         cc.gen_tau = bestmatch
         bestmatch.com_tau = cc
         gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
+
 
     ######################################################################################
     # fill the ntuple: each gen tau makes an entry
@@ -396,6 +416,12 @@ for i, ev in enumerate(events):
             tofill_gen['tau_com_phi'      ] = gg.com_tau.phi()
             tofill_gen['tau_com_charge'   ] = gg.com_tau.charge()
 #            tofill_gen['tau_com_pixel'    ] = gg.com_tau.numberOfPixelHits()
+
+        if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
+            tofill_gen['tau_up_com_pt'       ] = gg.up_com_tau.pt()
+            tofill_gen['tau_up_com_eta'      ] = gg.up_com_tau.eta()
+            tofill_gen['tau_up_com_phi'      ] = gg.up_com_tau.phi()
+            tofill_gen['tau_up_com_charge'   ] = gg.up_com_tau.charge()
 
         tofill_gen['tau_gen_pt'        ] = gg.pt()
         tofill_gen['tau_gen_eta'       ] = gg.eta()
