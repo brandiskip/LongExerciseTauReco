@@ -79,19 +79,19 @@ for v in variables:
     eff[v] = {}
     for displaced in trees:
         eff[v][displaced] = ROOT.TEfficiency(hists[v][displaced]["num"], hists[v][displaced]["den"])
-            
+
     # "plotEfficiencies defined in basic_plotting.py"
     plotEfficiencies(eff[v], "h_%s.pdf"%v, xlabel="transverse plane displacement (cm)", ylabel="reconstruction efficiency")
 '''
 
-##################################################################################################################################    
+##################################################################################################################################
 # Plotting combined lost tracks and packed PFCharged
 
 # Location of files in your directory
 # * pulls all files with that name
 direct = 'ntuples/'
 locations = [
-    "taus_hnlSample_combined/tau_gentau_tuple_HNL_M_10_ReMINI_*.root",
+    "taus_hnlSample_combined/tau_gentau_tuple_HNL_M_10_ReMINI_2.root",
     ]
 
 # definition to pull in files, "getTree" defined in basic_plotting.py
@@ -134,6 +134,6 @@ for v in variable:
     effic[v] = {}
     for displace in treez:
         effic[v][displace] = ROOT.TEfficiency(hist[v][displace]["num"], hist[v][displace]["den"])
-            
+
     # "plotEfficiencies defined in basic_plotting.py"
     plotEfficiencies(effic[v], "c_%s.pdf"%v, xlabel="transverse plane displacement (cm)", ylabel="reconstruction efficiency")
