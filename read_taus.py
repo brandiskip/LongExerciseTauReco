@@ -52,12 +52,13 @@ tofill_gen = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all b
 
 ##########################################################################################
 # Get ahold of the events
-#f = open('%s_filelist.txt'%args.sample)
-#infile=f.readlines()[ifile]
+f = open('%s_filelist.txt'%args.sample)
+infile=f.readlines()[ifile]
 
 #events = Events('/afs/cern.ch/user/b/bskipwor/630568A5-A778-324C-8DD4-7A72EDB74DDB.root') # make sure this corresponds to your file name!
-events = Events('/eos/user/b/bskipwor/sixth_5_run.root'.format(sample)) # make sure this corresponds to your file name!
-maxevents = -1 # max events to process
+#events = Events(infile.strip()) # make sure this corresponds to your file name!
+events = Events('/eos/user/b/bskipwor/eleventh_5_run.root') # make sure this corresponds to your file name!
+maxevents = 50 # max events to process
 totevents = events.size() # total number of events in the files
 
 def isAncestor(a, p):
@@ -343,7 +344,7 @@ for i, ev in enumerate(events):
     for cc in comtracks:
         found = False
         for gg in gen_taus :
-            if found == False and (abs(cc.pt() - gg.vispt())<0.2*gg.vispt()) and ( deltaR(cc.p4(), gg.visp4)<0.5) :
+            if found == False and (abs(cc.pt() - gg.vispt())<0.2*gg.vispt()) and ( deltaR(cc.p4(), gg.visp4)<0.3) :
                 comtracks_matchable.append(cc)
                 found = True
 
@@ -352,10 +353,11 @@ for i, ev in enumerate(events):
     for gg in gen_taus:
       bestcom = bestMatch(gg, comtracks_matchable )
       if bestcom[0] != None:
-          print deltaR(bestcom[0],gg)
+          #print deltaR(bestcom[0],gg)
           gg.up_com_tau = bestcom[0]
 
 
+    '''
     ## original version, using same approach as for reco_taus
     # match combined lost and PFCandidate tracks to gen taus
     for cc in comtracks : cc.gen_tau = None # first initialise the matching to None
@@ -364,7 +366,7 @@ for i, ev in enumerate(events):
     gen_taus_copy = gen_taus # we'll cyclically remove any gen taus that gets matched
 
     for cc in comtracks:
-        matches = [gg for gg in gen_taus_copy if deltaR(cc.p4(), gg.visp4)<0.3 and abs(cc.pt() - gg.vispt())<0.20*gg.vispt()]
+        matches = [gg for gg in gen_taus_copy if deltaR(cc.p4(), gg.visp4)<0.3 and abs(cc.pt() - gg.vispt())<0.2*gg.vispt()]
         if not len(matches):
             continue
         matches.sort(key = lambda gg : deltaR(cc.p4(), gg.visp4))
@@ -372,10 +374,11 @@ for i, ev in enumerate(events):
         cc.gen_tau = bestmatch
         bestmatch.com_tau = cc
         gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
-
+    '''
 
     ######################################################################################
     # fill the ntuple: each gen tau makes an entry
+    
     for gg in gen_taus:
         for k, v in tofill_gen.iteritems(): tofill_gen[k] = -99. # initialise before filling
         tofill_gen['run'               ] = ev.eventAuxiliary().run()
@@ -395,6 +398,7 @@ for i, ev in enumerate(events):
             tofill_gen['tau_reco_ip3d'     ] = gg.reco_tau.ip3d()
             tofill_gen['tau_reco_dxy'      ] = gg.reco_tau.dxy()
             tofill_gen['tau_reco_pixel'    ] = gg.reco_tau.leadChargedHadrCand().numberOfPixelHits()
+                        
         if hasattr(gg, 'l1_tau') and gg.l1_tau:
 #           tofill_gen['tau_l1_mass'     ] = gg.reco_tau.mass()
             tofill_gen['tau_l1_pt'       ] = gg.l1_tau.pt()
@@ -416,13 +420,19 @@ for i, ev in enumerate(events):
             tofill_gen['tau_com_phi'      ] = gg.com_tau.phi()
             tofill_gen['tau_com_charge'   ] = gg.com_tau.charge()
 #            tofill_gen['tau_com_pixel'    ] = gg.com_tau.numberOfPixelHits()
-
+            
         if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
             tofill_gen['tau_up_com_pt'       ] = gg.up_com_tau.pt()
             tofill_gen['tau_up_com_eta'      ] = gg.up_com_tau.eta()
             tofill_gen['tau_up_com_phi'      ] = gg.up_com_tau.phi()
             tofill_gen['tau_up_com_charge'   ] = gg.up_com_tau.charge()
-
+            
+        if hasattr(gg, 'reco_tau') and gg.reco_tau:
+            if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
+                print("both")
+            else:     
+                print(ev.eventAuxiliary().event())
+                  
         tofill_gen['tau_gen_pt'        ] = gg.pt()
         tofill_gen['tau_gen_eta'       ] = gg.eta()
         tofill_gen['tau_gen_phi'       ] = gg.phi()
