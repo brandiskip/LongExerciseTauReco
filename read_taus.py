@@ -339,6 +339,21 @@ for i, ev in enumerate(events):
     # add together lost tracks and packed PFCandidates
     comtracks = lost_tracks + packed_tracks
 
+    if ev.eventAuxiliary().event() == 416004:
+        al_pt  = []
+        al_eta = []
+        al_phi = []
+        for jj in comtracks:
+            apt  = abs(jj.pt())
+            al_pt.append(apt)
+            aeta = abs(jj.eta())
+            al_eta.append(aeta)
+            aphi = abs(jj.phi())
+            al_phi.append(aphi)
+        print("max_com_pt", max(al_pt))
+        print("min_com_eta", min(al_eta))
+        print("min_com_phi", min(al_phi))
+
     ## skim comtracks collection to keep only PFcands that are "close" in dR and dPt from at least a gen tau
     comtracks_matchable = []
     for cc in comtracks:
@@ -426,13 +441,8 @@ for i, ev in enumerate(events):
             tofill_gen['tau_up_com_eta'      ] = gg.up_com_tau.eta()
             tofill_gen['tau_up_com_phi'      ] = gg.up_com_tau.phi()
             tofill_gen['tau_up_com_charge'   ] = gg.up_com_tau.charge()
-            
-        if hasattr(gg, 'reco_tau') and gg.reco_tau:
-            if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
-                print("both")
-            else:     
-                print(ev.eventAuxiliary().event())
-                  
+        
+        
         tofill_gen['tau_gen_pt'        ] = gg.pt()
         tofill_gen['tau_gen_eta'       ] = gg.eta()
         tofill_gen['tau_gen_phi'       ] = gg.phi()
@@ -452,6 +462,18 @@ for i, ev in enumerate(events):
         tofill_gen['tau_gen_vis_phi'   ] = gg.visphi()
         ntuple_gen.Fill(array('f',tofill_gen.values()))
 
+        if hasattr(gg, 'reco_tau') and gg.reco_tau and gg.decayMode>=0 and gg.decayMode<=4:
+            if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
+                print("both")
+            else:     
+                print("event_id", ev.eventAuxiliary().event())
+                print("gen_pt", gg.pt())
+                print("reco_pt",gg.reco_tau.pt())
+                print("gen_eta", gg.eta())
+                print("reco_eta", gg.reco_tau.eta())
+                print("gen_phi", gg.phi())
+                print("reco_phi", gg.reco_tau.phi())
+                        
     # fill the ntuple: each jet makes an entry
 #     for jj in jets:
 #         for k, v in tofill_jet.iteritems(): tofill_jet[k] = -99. # initialise before filling
