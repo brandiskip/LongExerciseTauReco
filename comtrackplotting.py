@@ -38,27 +38,26 @@ sel = ('tau_gen_lxy >> num')
 num_sel = ['tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode == 0 && tau_up_com_pt>0', 'tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode == 0 && tau_reco_pt>0']
 for nn in num_sel:
 	tch.Draw(sel, nn)
-	print(nn)
-	c = ROOT.TCanvas("num")
+	c = ROOT.TCanvas("nn")
 	c = ROOT.TCanvas("den")
 	c.cd()
 	eff = ROOT.TEfficiency(histo_num, histo_den)
 	eff.SetTitle('displaced #tau_{h}^{gen} ;transverse plane displacement (cm) ; efficiency')
-	eff.Draw('alpe')
+	for i, nn in enumerate(num_sel):
+		if i==0:
+			eff.Draw('alpe')
+		else:
+			print("2nd")
+			eff.Draw('lpe same')
+
+	legend = ROOT.TLegend(.66, .64, .8, .88)
+	legend.SetHeader("displaced #tau_{h}^{gen}")
+	legend.SetBorderSize(0)
+	legend.SetFillStyle(0)
+	legend.Draw()
+
+	# save the current canvas
+	c.SaveAs('com_efficiency_{}.pdf'.format(sample))
+	c.SaveAs('com_efficiency_{}.png'.format(sample))
+	c.Clear()
 	
-
-################################################################################################################################
-
-
-
-legend = ROOT.TLegend(.66, .64, .8, .88)
-legend.SetHeader("displaced #tau_{h}^{gen}")
-legend.SetBorderSize(0)
-legend.SetFillStyle(0)
-legend.Draw()
-
-
-# save the current canvas
-c.SaveAs('com_efficiency_{}.pdf'.format(sample))
-c.SaveAs('com_efficiency_{}.png'.format(sample))
-c.Clear()
