@@ -31,8 +31,18 @@ tch.Add("ntuples/taus_hnlSample_combined/tau_gentau_tuple_HNL_M_10_ReMINI_*.root
 histo_den = ROOT.TH1F('den', 'den', 20, 0, 20)
 histo_num = ROOT.TH1F('num', 'num', 20, 0, 20)
 
+################################################################################################################################
+# loop????
+
+# plot tracks
+tch.Draw('tau_gen_lxy >> den', 'tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode == 0')
+tch.Draw('tau_gen_lxy >> num', 'tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_up_com_pt>0 && tau_gen_decaymode == 0')
+
+# plot reco
 tch.Draw('tau_gen_lxy >> den', 'tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode == 0')
 tch.Draw('tau_gen_lxy >> num', 'tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0 && tau_gen_decaymode == 0')
+
+################################################################################################################################
 
 c = ROOT.TCanvas("num")
 c = ROOT.TCanvas("den")
