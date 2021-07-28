@@ -73,18 +73,14 @@ for v in variables:
         #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0')
 
         # Plotting 1-prong decay with reco_decaymodes
-        #hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4')
-        #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>=0 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4 && tau_reco_decaymode >= 0 && tau_reco_decaymode <= 4')
+        hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4')
+        hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>=0 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4 && tau_reco_decaymode >= 0 && tau_reco_decaymode <= 4')
 
         #Plotting 3-prong decay
         #hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 10 && tau_gen_decaymode <= 14')
         #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0 && tau_gen_decaymode >= 10 && tau_gen_decaymode <= 14 && tau_reco_decaymode >= 10 && tau_reco_decaymode <= 14')
 
-        # Plotting decaymode = 0 with combined tracks
-        hist[v][displace]["den"] = getHist(treez[displace], "c_%s_%s_den"%(v,displace), variable[v]["varname"], getBinStr(variable[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode == 0')
-        hist[v][displace]["num"] = getHist(treez[displace], "c_%s_%s_num"%(v,displace), variable[v]["varname"], getBinStr(variable[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>=0 && tau_gen_decaymode == 0')
-
-
+        
 eff = {}
 for v in variables:
 
@@ -132,11 +128,11 @@ for v in variable:
 
         # Plotting lost tracks and packed PFcandidates all decaymodes
         #hist[v][displace]["den"] = getHist(trees[displace], "c_%s_%s_den"%(v,displace), variable[v]["varname"], getBinStr(variable[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1')
-        #hist[v][displace]["num"] = getHist(trees[displace], "c_%s_%s_num"%(v,displace), variable[v]["varname"], getBinStr(variable[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_com_pt>=0')
+        #hist[v][displace]["num"] = getHist(trees[displace], "c_%s_%s_num"%(v,displace), variable[v]["varname"], getBinStr(variable[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_up_com_pt>=0')
 
         # Plotting decaymode = 0 with combined tracks
         hist[v][displace]["den"] = getHist(treez[displace], "c_%s_%s_den"%(v,displace), variable[v]["varname"], getBinStr(variable[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode == 0')
-        hist[v][displace]["num"] = getHist(treez[displace], "c_%s_%s_num"%(v,displace), variable[v]["varname"], getBinStr(variable[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>=0 && tau_gen_decaymode == 0')
+        hist[v][displace]["num"] = getHist(treez[displace], "c_%s_%s_num"%(v,displace), variable[v]["varname"], getBinStr(variable[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_up_com_pt>=0 && tau_gen_decaymode == 0')
 
 effic = {}
 for v in variable:
