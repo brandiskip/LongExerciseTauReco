@@ -11,14 +11,15 @@ cms_style.setTDRStyle()
 
 #open and read file
 tch = ROOT.TChain("tree")
-tch.Add("ntuples/taus_hnlSample_combined/tau_gentau_tuple_HNL_M_10_ReMINI_*.root")
+#tch.Add("ntuples/taus_hnlSample_M_10mod/tau_gentau_tuple_HNL_M_10_ReMINI_*.root")
+tch.Add("ntuples/taus_hnlSample_M_5mod/tau_gentau_tuple_HNL_M_5_ReMINI_*.root")
 
 #define fiducial selection (types of taus we care about)
-fid_sel = 'tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode == 0'
+fid_sel = 'tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<1.0 && tau_gen_decaymode == 0'
 
 #define cut selections (plot multiple cut selections)
 cut_sels = {
-	"reco taus": "tau_reco_pt>0",
+	"reco taus": "tau_reco_pt>0 && tau_reco_decaymode == 0 && abs(tau_reco_pt - tau_gen_vis_pt)<0.2*tau_gen_vis_pt",
 	"com taus" : "tau_up_com_pt>0",
 	}
 
@@ -41,12 +42,12 @@ for c in cut_sels:
 	#	efficiency is num/den
 	eff = ROOT.TEfficiency(num, den)
 	effs_con[c] = dc(eff)
-
+	
 #plot efficiencies on canvas
 # inside () is just the name you give the canvas
 c = ROOT.TCanvas()
 # create box for legend
-legend = ROOT.TLegend(.66, .64, .8, .88)
+legend = ROOT.TLegend(.75, .75, .9, .95)
 legend.SetBorderSize(0)
 legend.SetFillStyle(0)
 
@@ -56,11 +57,14 @@ for i,e in enumerate(effs_con):
 	eff_con = effs_con[e]
 	eff_con.SetLineColor(colors[i])
 	eff_con.SetMarkerColor(colors[i])
+	eff_con.SetTitle('eta<1.0 ;transverse plane displacement (cm) ; efficiency')
 	if i==0:
 		eff_con.Draw('alpe') # a creates the axis
 	else:
 		eff_con.Draw('lpe same') # if use a again, will remove axis
+	
 	legend.AddEntry(eff_con,e)
+
 
 legend.Draw()
 
