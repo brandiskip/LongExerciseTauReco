@@ -28,20 +28,22 @@ sample = args.file
 # Location of files in your directory
 # * pulls all files with that name
 # HNL 10 GeV mass sample
-
+'''
 floc = 'ntuples/'
 fnames = [
 	"taus_hnlSample_M_10unmod/tau_gentau_tuple_HNL_M_10_*.root",
 	"taus_hnlSample_M_10mod/tau_gentau_tuple_HNL_M_10_ReMINI_*.root",
+    "taus_hnlSample_M_10PV/tau_gentau_tuple_HNL_M_10_ReMINI_*.root",
     ]
 '''
 # HNL 5 GeV mass sample
 floc = 'ntuples/'
 fnames = [
-    "taus_hnlSample_M_5unmod/tau_gentau_tuple_HNL_M_5_*.root",
+    #"taus_hnlSample_M_5unmod/tau_gentau_tuple_HNL_M_5_*.root",
     "taus_hnlSample_M_5mod/tau_gentau_tuple_HNL_M_5_ReMINI_*.root",
+    "taus_hnlSample_M_5PV/tau_gentau_tuple_HNL_M_5_ReMINI_*.root",
     ]
-'''
+
 # definition to pull in files, "getTree" defined in basic_plotting.py
 trees = {}
 for fname in fnames:
@@ -70,17 +72,20 @@ for v in variables:
 
         # Plotting with no prong cut
         #hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1')
-        #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0')
+        #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0 && abs(tau_reco_pt - tau_gen_vis_pt)<0.2*tau_gen_vis_pt')
 
         # Plotting 1-prong decay with reco_decaymodes
-        hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4')
-        hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>=0 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4 && tau_reco_decaymode >= 0 && tau_reco_decaymode <= 4')
+        #hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 0 && tau_gen_decaymode <= 4')
+        #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>=0 && abs(tau_reco_pt - tau_gen_vis_pt)<0.2*tau_gen_vis_pt && tau_gen_decaymode >= 0 && tau_reco_decaymode >= 0 && tau_gen_decaymode <= 4  && tau_reco_decaymode <= 4')
 
         #Plotting 3-prong decay
         #hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode >= 10 && tau_gen_decaymode <= 14')
-        #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0 && tau_gen_decaymode >= 10 && tau_gen_decaymode <= 14 && tau_reco_decaymode >= 10 && tau_reco_decaymode <= 14')
+        #hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_reco_pt>0 && abs(tau_reco_pt - tau_gen_vis_pt)<0.2*tau_gen_vis_pt && tau_gen_decaymode >= 10 && tau_gen_decaymode <= 14 && tau_reco_decaymode >= 10 && tau_reco_decaymode <= 14')
 
-        
+        #Plotting decaymode == 0
+        hists[v][displaced]["den"] = getHist(trees[displaced], "h_%s_%s_den"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode == 0')
+        hists[v][displaced]["num"] = getHist(trees[displaced], "h_%s_%s_num"%(v,displaced), variables[v]["varname"], getBinStr(variables[v]), sel_name='tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode == 0 && tau_reco_pt>0 && tau_reco_decaymode == 0 && abs(tau_reco_pt - tau_gen_vis_pt)<0.2*tau_gen_vis_pt')
+
 eff = {}
 for v in variables:
 
@@ -100,8 +105,7 @@ for v in variables:
 # * pulls all files with that name
 direct = 'ntuples/'
 locations = [
-    "taus_hnlSample_M_10mod/tau_gentau_tuple_HNL_M_10_ReMINI_*.root",
-    #"taus_hnlSample_M_10PV/tau_gentau_tuple_HNL_M_10_ReMINI_*.root",
+    #"taus_hnlSample_M_10mod/tau_gentau_tuple_HNL_M_10_ReMINI_*.root",
     "taus_hnlSample_M_5mod/tau_gentau_tuple_HNL_M_5_ReMINI_*.root",
     ]
 
@@ -115,7 +119,7 @@ for location in locations:
 
 # variable interested in plotting
 variable = {
-        "lxy": {"varname": "tau_gen_lxy", "nbins": 30, "xmin": 0, "xmax": 20, "label": "displacement"},
+        "lxy": {"varname": "tau_gen_lxy", "nbins": 20, "xmin": 0, "xmax": 20, "label": "displacement"},
             }
 
 hist = {}
