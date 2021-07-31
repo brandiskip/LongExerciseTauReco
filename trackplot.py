@@ -11,22 +11,22 @@ cms_style.setTDRStyle()
 
 #open and read file
 tch = ROOT.TChain("tree")
-#tch.Add("ntuples/taus_hnlSample_M_10mod/tau_gentau_tuple_HNL_M_10_ReMINI_*.root")
-tch.Add("ntuples/taus_hnlSample_M_5mod/tau_gentau_tuple_HNL_M_5_ReMINI_*.root")
+tch.Add("ntuples/taus_hnlSample_M_10mod/tau_gentau_tuple_HNL_M_10_ReMINI_*.root")
+#tch.Add("ntuples/taus_hnlSample_M_5mod/tau_gentau_tuple_HNL_M_5_ReMINI_*.root")
 
 #define fiducial selection (types of taus we care about)
-fid_sel = 'tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<1.0 && tau_gen_decaymode == 0'
+fid_sel = 'tau_gen_vis_pt>20 && abs(tau_gen_vis_eta)<2.1 && tau_gen_decaymode == 0 && tau_gen_lxy>=0 && tau_gen_lxy<=10'
 
 #define cut selections (plot multiple cut selections)
 cut_sels = {
 	"reco taus": "tau_reco_pt>0 && tau_reco_decaymode == 0 && abs(tau_reco_pt - tau_gen_vis_pt)<0.2*tau_gen_vis_pt",
-	"com taus" : "tau_up_com_pt>0",
+	"com taus" : "tau_up_com_pt>0 ",
 	}
 
 # den is the number of taus passing only fiducial selection
-den = ROOT.TH1F("den", "den", 20, 0, 20)
+den = ROOT.TH1F("den", "den", 40, 0, 20)
 # fill histogram
-tch.Draw("tau_gen_lxy >> den", fid_sel)
+tch.Draw("tau_gen_eta >> den", fid_sel)
 
 # define empty dictionary to fill with efficiency plots
 effs_con = {}
@@ -36,9 +36,9 @@ for c in cut_sels:
 	cut_sel = cut_sels[c]
 	# num is the number of taus passing the cut selection plus fiducial selection
 	# make object
-	num = ROOT.TH1F("num " + c, "num " + c, 20, 0, 20)
+	num = ROOT.TH1F("num " + c, "num " + c, 40, 0, 20)
 	# fill histogram
-	tch.Draw("tau_gen_lxy >> num " + c, cut_sel + " && " + fid_sel)
+	tch.Draw("tau_gen_eta >> num " + c, cut_sel + " && " + fid_sel)
 	#	efficiency is num/den
 	eff = ROOT.TEfficiency(num, den)
 	effs_con[c] = dc(eff)
@@ -57,11 +57,19 @@ for i,e in enumerate(effs_con):
 	eff_con = effs_con[e]
 	eff_con.SetLineColor(colors[i])
 	eff_con.SetMarkerColor(colors[i])
-	eff_con.SetTitle('eta<1.0 ;transverse plane displacement (cm) ; efficiency')
+	eff_con.SetTitle(' ;eta ; efficiency')
 	if i==0:
 		eff_con.Draw('alpe') # a creates the axis
+		ROOT.gPad.Update()
+
+		eff_con.GetPaintedGraph().GetHistogram().SetMinimum(0)
+		eff_con.GetPaintedGraph().GetHistogram().SetMaximum(1.2)
+		eff_con.Draw('alpe') # a creates the axis
+		ROOT.gPad.Update() 
 	else:
 		eff_con.Draw('lpe same') # if use a again, will remove axis
+		ROOT.gPad.Update()	
+	
 	
 	legend.AddEntry(eff_con,e)
 
