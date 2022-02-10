@@ -9,22 +9,21 @@ from rerunTauRecoOnMiniAOD import process
 
 runSignal = False # Set to False to read in QCD file instead of ZTT
 
-maxEvents = 200
+maxEvents = -1
 
 readFiles = cms.untracked.vstring()
 secFiles = cms.untracked.vstring()
 process.source = cms.Source(
     "PoolSource", fileNames=readFiles, secondaryFileNames=secFiles)
+# add , eventsToProcess = cms.untracked.VEventRange('1:958444-1:958444','2:100-2:101') right after secondaryFileNames=secFiles above to run on specific event(s)
 
-print('\t Max events:', process.maxEvents.input.value())
+# print('\t Max events:', process.maxEvents.input.value())
 
-if runSignal:
-    readFiles.extend([
-        'file:ZTT_MiniAOD_106X.root' 
-    ])
-else:
-    readFiles.extend([ 
-        'file:QCD_MiniAOD_106X.root'
+
+readFiles.extend([
+    'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/HeavyNeutrino_trilepton_M-5_V-0_00639_tau_massiveAndCKM_LO/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/270000/FCE8BD0F-2C74-EA40-A4FC-12C3EE4B0285.root',
+    'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/HeavyNeutrino_trilepton_M-5_V-0_00639_tau_massiveAndCKM_LO/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/270000/F0C6A50F-B346-1B47-9359-5005A3129424.root',
+    'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/HeavyNeutrino_trilepton_M-5_V-0_00639_tau_massiveAndCKM_LO/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/270000/CFC82CF4-FE57-7840-ADC5-4B81AA85899B.root',
     ])
 
 # limit the number of events to be processed
@@ -32,231 +31,36 @@ process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32( maxEvents )
 )
 
-## E.G.: change the isolation cone
-#process.combinatoricRecoTaus.builders[0].isolationConeSize = cms.double(0.8) # originally 0.5
+process.combinatoricRecoTaus.builders[0].qualityCuts.signalQualityCuts.maxDeltaZ = cms.double(100.)
+process.combinatoricRecoTaus.builders[0].qualityCuts.signalQualityCuts.maxTrackChi2 = cms.double(1000.)
+process.combinatoricRecoTaus.builders[0].qualityCuts.signalQualityCuts.maxTransverseImpactParameter = cms.double(100.)
+process.combinatoricRecoTaus.builders[0].qualityCuts.pvFindingAlgo = cms.string('highestPtInEvent')
 
-## E.G.: Remove all decay modes with piZeros
-#process.combinatoricRecoTaus.builders[0].decayModes = [dm for dm in process.combinatoricRecoTaus.builders[0].decayModes if dm.nPiZeros==0]
+# chargedPFCandidates from PFChargedHadrons ... well this is obvious
+process.ak4PFJetsRecoTauChargedHadrons.builders[0].qualityCuts.signalQualityCuts.maxDeltaZ = cms.double(100.)
+process.ak4PFJetsRecoTauChargedHadrons.builders[0].qualityCuts.signalQualityCuts.maxTrackChi2 = cms.double(1000.)
+process.ak4PFJetsRecoTauChargedHadrons.builders[0].qualityCuts.signalQualityCuts.maxTransverseImpactParameter = cms.double(100.)
+process.ak4PFJetsRecoTauChargedHadrons.builders[0].qualityCuts.pvFindingAlgo = cms.string('highestPtInEvent') # closest in dz makes no sense for displaced stuff
 
-## Some more settings (default values given):
-"""
-process.combinatoricRecoTaus.builders[0].decayModes = cms.VPSet(
-        cms.PSet(
-            maxPiZeros = cms.uint32(0),
-            maxTracks = cms.uint32(6),
-            nCharged = cms.uint32(1),
-            nPiZeros = cms.uint32(0)
-        ),
-        cms.PSet(
-            maxPiZeros = cms.uint32(6),
-            maxTracks = cms.uint32(6),
-            nCharged = cms.uint32(1),
-            nPiZeros = cms.uint32(1)
-        ),
-        cms.PSet(
-            maxPiZeros = cms.uint32(5),
-            maxTracks = cms.uint32(6),
-            nCharged = cms.uint32(1),
-            nPiZeros = cms.uint32(2)
-        ),
-        cms.PSet(
-            maxPiZeros = cms.uint32(0),
-            maxTracks = cms.uint32(6),
-            nCharged = cms.uint32(2),
-            nPiZeros = cms.uint32(0)
-        ),
-        cms.PSet(
-            maxPiZeros = cms.uint32(3),
-            maxTracks = cms.uint32(6),
-            nCharged = cms.uint32(2),
-            nPiZeros = cms.uint32(1)
-        ),
-        cms.PSet(
-            maxPiZeros = cms.uint32(0),
-            maxTracks = cms.uint32(6),
-            nCharged = cms.uint32(3),
-            nPiZeros = cms.uint32(0)
-        ),
-        cms.PSet(
-            maxPiZeros = cms.uint32(3),
-            maxTracks = cms.uint32(6),
-            nCharged = cms.uint32(3),
-            nPiZeros = cms.uint32(1)
-        )
-    )
+# chargedPFCandidates from lostTracks ... this collections exists in miniAODs
+# the aim is to use as many track candidates as possible to build taus
+# in order to maximise the efficiency
+process.ak4PFJetsRecoTauChargedHadrons.builders[1].qualityCuts.signalQualityCuts.maxDeltaZ = cms.double(100.)
+process.ak4PFJetsRecoTauChargedHadrons.builders[1].qualityCuts.signalQualityCuts.maxTrackChi2 = cms.double(1000.)
+process.ak4PFJetsRecoTauChargedHadrons.builders[1].qualityCuts.signalQualityCuts.maxTransverseImpactParameter = cms.double(100.)
+process.ak4PFJetsRecoTauChargedHadrons.builders[1].qualityCuts.pvFindingAlgo = cms.string('highestPtInEvent')
 
-process.combinatoricRecoTaus.builders[0].qualityCuts = cms.PSet(
-            isolationQualityCuts = cms.PSet(
-                maxDeltaZ = cms.double(0.2),
-                maxTrackChi2 = cms.double(100.0),
-                maxTransverseImpactParameter = cms.double(0.03),
-                minGammaEt = cms.double(1.5),
-                minTrackHits = cms.uint32(8),
-                minTrackPixelHits = cms.uint32(0),
-                minTrackPt = cms.double(1.0),
-                minTrackVertexWeight = cms.double(-1.0)
-            ),
-            leadingTrkOrPFCandOption = cms.string('leadPFCand'),
-            primaryVertexSrc = cms.InputTag("offlineSlimmedPrimaryVertices"),
-            pvFindingAlgo = cms.string('closestInDeltaZ'),
-            recoverLeadingTrk = cms.bool(False),
-            signalQualityCuts = cms.PSet(
-                maxDeltaZ = cms.double(0.4),
-                maxTrackChi2 = cms.double(100.0),
-                maxTransverseImpactParameter = cms.double(0.1),
-                minGammaEt = cms.double(1.0),
-                minNeutralHadronEt = cms.double(30.0),
-                minTrackHits = cms.uint32(3),
-                minTrackPixelHits = cms.uint32(0),
-                minTrackPt = cms.double(0.5),
-                minTrackVertexWeight = cms.double(-1.0)
-            ),
-            vertexTrackFiltering = cms.bool(False),
-            vxAssocQualityCuts = cms.PSet(
-                maxTrackChi2 = cms.double(100.0),
-                maxTransverseImpactParameter = cms.double(0.1),
-                minGammaEt = cms.double(1.0),
-                minTrackHits = cms.uint32(3),
-                minTrackPixelHits = cms.uint32(0),
-                minTrackPt = cms.double(0.5),
-                minTrackVertexWeight = cms.double(-1.0)
-            )
-        )
-
-process.hpsPFTauDiscriminationByDecayModeFindingNewDMs.decayModes(
-        cms.PSet(
-        applyBendCorrection = cms.PSet(
-            eta = cms.bool(True),
-            mass = cms.bool(True),
-            phi = cms.bool(True)
-        ),
-        assumeStripMass = cms.double(-1.0),
-        maxMass = cms.string('1.'),
-        maxPi0Mass = cms.double(1000000000.0),
-        minMass = cms.double(-1000.0),
-        minPi0Mass = cms.double(-1000.0),
-        nCharged = cms.uint32(1),
-        nChargedPFCandsMin = cms.uint32(1),
-        nPiZeros = cms.uint32(0),
-        nTracksMin = cms.uint32(1)
-    ),
-    cms.PSet(
-        applyBendCorrection = cms.PSet(
-            eta = cms.bool(True),
-            mass = cms.bool(True),
-            phi = cms.bool(True)
-        ),
-        assumeStripMass = cms.double(0.1349),
-        maxMass = cms.string('max(1.3, min(1.3*sqrt(pt/100.), 4.2))'),
-        maxPi0Mass = cms.double(1000000000.0),
-        minMass = cms.double(0.3),
-        minPi0Mass = cms.double(-1000.0),
-        nCharged = cms.uint32(1),
-        nChargedPFCandsMin = cms.uint32(1),
-        nPiZeros = cms.uint32(1),
-        nTracksMin = cms.uint32(1)
-    ),
-    cms.PSet(
-        applyBendCorrection = cms.PSet(
-            eta = cms.bool(True),
-            mass = cms.bool(True),
-            phi = cms.bool(True)
-        ),
-        assumeStripMass = cms.double(0.0),
-        maxMass = cms.string('max(1.2, min(1.2*sqrt(pt/100.), 4.0))'),
-        maxPi0Mass = cms.double(0.2),
-        minMass = cms.double(0.4),
-        minPi0Mass = cms.double(0.05),
-        nCharged = cms.uint32(1),
-        nChargedPFCandsMin = cms.uint32(1),
-        nPiZeros = cms.uint32(2),
-        nTracksMin = cms.uint32(1)
-    ),
-    cms.PSet(
-        applyBendCorrection = cms.PSet(
-            eta = cms.bool(False),
-            mass = cms.bool(False),
-            phi = cms.bool(False)
-        ),
-        assumeStripMass = cms.double(-1.0),
-        maxMass = cms.string('1.2'),
-        maxPi0Mass = cms.double(1000000000.0),
-        minMass = cms.double(0.0),
-        minPi0Mass = cms.double(-1000.0),
-        nCharged = cms.uint32(2),
-        nChargedPFCandsMin = cms.uint32(1),
-        nPiZeros = cms.uint32(0),
-        nTracksMin = cms.uint32(2)
-    ),
-    cms.PSet(
-        applyBendCorrection = cms.PSet(
-            eta = cms.bool(False),
-            mass = cms.bool(False),
-            phi = cms.bool(False)
-        ),
-        assumeStripMass = cms.double(-1.0),
-        maxMass = cms.string('max(1.2, min(1.2*sqrt(pt/100.), 4.0))'),
-        maxPi0Mass = cms.double(1000000000.0),
-        minMass = cms.double(0.0),
-        minPi0Mass = cms.double(-1000.0),
-        nCharged = cms.uint32(2),
-        nChargedPFCandsMin = cms.uint32(1),
-        nPiZeros = cms.uint32(1),
-        nTracksMin = cms.uint32(2)
-    ),
-    cms.PSet(
-        applyBendCorrection = cms.PSet(
-            eta = cms.bool(False),
-            mass = cms.bool(False),
-            phi = cms.bool(False)
-        ),
-        assumeStripMass = cms.double(-1.0),
-        maxMass = cms.string('1.5'),
-        maxPi0Mass = cms.double(1000000000.0),
-        minMass = cms.double(0.8),
-        minPi0Mass = cms.double(-1000.0),
-        nCharged = cms.uint32(3),
-        nChargedPFCandsMin = cms.uint32(1),
-        nPiZeros = cms.uint32(0),
-        nTracksMin = cms.uint32(2)
-    ),
-    cms.PSet(
-        applyBendCorrection = cms.PSet(
-            eta = cms.bool(False),
-            mass = cms.bool(False),
-            phi = cms.bool(False)
-        ),
-        assumeStripMass = cms.double(-1.0),
-        maxMass = cms.string('1.5'),
-        maxPi0Mass = cms.double(1000000000.0),
-        minMass = cms.double(0.8),
-        minPi0Mass = cms.double(-1000.0),
-        nCharged = cms.uint32(3),
-        nChargedPFCandsMin = cms.uint32(1),
-        nPiZeros = cms.uint32(0),
-        nTracksMin = cms.uint32(2)
-    ),
-    cms.PSet(
-        applyBendCorrection = cms.PSet(
-            eta = cms.bool(False),
-            mass = cms.bool(False),
-            phi = cms.bool(False)
-        ),
-        assumeStripMass = cms.double(-1.0),
-        maxMass = cms.string('1.6'),
-        maxPi0Mass = cms.double(1000000000.0),
-        minMass = cms.double(0.9),
-        minPi0Mass = cms.double(-1000.0),
-        nCharged = cms.uint32(3),
-        nChargedPFCandsMin = cms.uint32(1),
-        nPiZeros = cms.uint32(1),
-        nTracksMin = cms.uint32(2)
-    )
-)
-
-)
-"""
+# chargedPFCandidates from PFNeutralHadrons ... yes, from neutrals too, nothing is thrown away
+process.ak4PFJetsRecoTauChargedHadrons.builders[2].qualityCuts.signalQualityCuts.maxDeltaZ = cms.double(100.)
+process.ak4PFJetsRecoTauChargedHadrons.builders[2].qualityCuts.signalQualityCuts.maxTrackChi2 = cms.double(1000.)
+process.ak4PFJetsRecoTauChargedHadrons.builders[2].qualityCuts.signalQualityCuts.maxTransverseImpactParameter = cms.double(100.)
+process.ak4PFJetsRecoTauChargedHadrons.builders[2].qualityCuts.pvFindingAlgo = cms.string('highestPtInEvent')
 
 
 # change the output file name, don't overwrite the original file!
-process.output.fileName = cms.untracked.string('{}_miniAOD_rerunTauRECO.root'.format("ZTT" if runSignal else "QCD"))
+# process.output.fileName = cms.untracked.string('{}_miniAOD_rerunTauRECO.root'.format("ZTT" if runSignal else "QCD"))
+process.output.fileName = cms.untracked.string('/eos/user/b/bskipwor/HNL_5_Samples/HNL_miniAOD_17_3.root')
+# process.output.outputComands = cms.untracked.vstring(
+#     'drop *',
+#     ''
+# )
