@@ -55,10 +55,10 @@ tofill_gen = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all b
 f = open('%s_filelist.txt'%args.sample)
 infile=f.readlines()[ifile]
 
-#events = Events('/afs/cern.ch/user/b/bskipwor/630568A5-A778-324C-8DD4-7A72EDB74DDB.root') # make sure this corresponds to your file name!
-#events = Events(infile.strip()) # make sure this corresponds to your file name!
-events = Events('/eos/user/b/bskipwor/eleventh_5_run.root') # make sure this corresponds to your file name!
-maxevents = 50 # max events to process
+#events = Events('root://cms-xrd-global.cern.ch/'+infile) # make sure this corresponds to your file name!
+events = Events(infile.strip()) # make sure this corresponds to your file name!
+#events = Events('/eos/user/b/bskipwor/HNL_M_5/HNL_miniAOD_1_3.root') # make sure this corresponds to your file name!
+maxevents = -1 # max events to process
 totevents = events.size() # total number of events in the files
 
 def isAncestor(a, p):
@@ -324,7 +324,7 @@ for i, ev in enumerate(events):
     ev.getByLabel(label_lost, handle_lost)
     lost = handle_lost.product()
 
-    # only keep pion candidates
+    # only keep pion candidates 
     lost_tracks = [ll for ll in lost if abs(ll.pdgId())==211]
 
     ######################################################################################
@@ -333,26 +333,30 @@ for i, ev in enumerate(events):
     packed = handle_packed.product()
 
     # only keep pion candidates
-    packed_tracks = [ff for ff in packed if abs(ff.pdgId())==211]
+    packed_tracks = [ff for ff in packed if abs(ll.pdgId())==211]
 
     ######################################################################################
     # add together lost tracks and packed PFCandidates
     comtracks = lost_tracks + packed_tracks
 
-    if ev.eventAuxiliary().event() == 416004:
+
+    # takes event number as input if matched reco and not matched comtracks to gen tau for 1-prong
+    if ev.eventAuxiliary().event() == 416082:
         al_pt  = []
         al_eta = []
         al_phi = []
         for jj in comtracks:
-            apt  = abs(jj.pt())
-            al_pt.append(apt)
-            aeta = abs(jj.eta())
-            al_eta.append(aeta)
-            aphi = abs(jj.phi())
-            al_phi.append(aphi)
-        print("max_com_pt", max(al_pt))
-        print("min_com_eta", min(al_eta))
-        print("min_com_phi", min(al_phi))
+            for gg in gen_taus:
+                apt  = abs(jj.pt() - gg.pt())
+                al_pt.append(apt)
+                aeta = abs(jj.eta() - gg.eta())
+                al_eta.append(aeta)
+                aphi = abs(jj.phi() - gg.phi())
+                al_phi.append(aphi)
+        print("min_diff_pt", min(al_pt))
+        print("min_diff_eta", min(al_eta))
+        print("min_diff_phi", min(al_phi))
+
 
     ## skim comtracks collection to keep only PFcands that are "close" in dR and dPt from at least a gen tau
     comtracks_matchable = []
@@ -393,7 +397,7 @@ for i, ev in enumerate(events):
 
     ######################################################################################
     # fill the ntuple: each gen tau makes an entry
-    
+
     for gg in gen_taus:
         for k, v in tofill_gen.iteritems(): tofill_gen[k] = -99. # initialise before filling
         tofill_gen['run'               ] = ev.eventAuxiliary().run()
@@ -413,7 +417,7 @@ for i, ev in enumerate(events):
             tofill_gen['tau_reco_ip3d'     ] = gg.reco_tau.ip3d()
             tofill_gen['tau_reco_dxy'      ] = gg.reco_tau.dxy()
             tofill_gen['tau_reco_pixel'    ] = gg.reco_tau.leadChargedHadrCand().numberOfPixelHits()
-                        
+
         if hasattr(gg, 'l1_tau') and gg.l1_tau:
 #           tofill_gen['tau_l1_mass'     ] = gg.reco_tau.mass()
             tofill_gen['tau_l1_pt'       ] = gg.l1_tau.pt()
@@ -435,14 +439,14 @@ for i, ev in enumerate(events):
             tofill_gen['tau_com_phi'      ] = gg.com_tau.phi()
             tofill_gen['tau_com_charge'   ] = gg.com_tau.charge()
 #            tofill_gen['tau_com_pixel'    ] = gg.com_tau.numberOfPixelHits()
-            
+
         if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
             tofill_gen['tau_up_com_pt'       ] = gg.up_com_tau.pt()
             tofill_gen['tau_up_com_eta'      ] = gg.up_com_tau.eta()
             tofill_gen['tau_up_com_phi'      ] = gg.up_com_tau.phi()
             tofill_gen['tau_up_com_charge'   ] = gg.up_com_tau.charge()
-        
-        
+
+
         tofill_gen['tau_gen_pt'        ] = gg.pt()
         tofill_gen['tau_gen_eta'       ] = gg.eta()
         tofill_gen['tau_gen_phi'       ] = gg.phi()
@@ -462,10 +466,14 @@ for i, ev in enumerate(events):
         tofill_gen['tau_gen_vis_phi'   ] = gg.visphi()
         ntuple_gen.Fill(array('f',tofill_gen.values()))
 
-        if hasattr(gg, 'reco_tau') and gg.reco_tau and gg.decayMode>=0 and gg.decayMode<=4:
+        # if reco matches gen but comtracks does not match gen, prints event ID and pt, eta, phi for gen and reco
+        if hasattr(gg, 'reco_tau') and gg.reco_tau and gg.decayMode==0:
             if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
                 print("both")
-            else:     
+                print("event_id", ev.eventAuxiliary().event())
+                print("gen_pt", gg.pt())
+                print("reco_pt",gg.reco_tau.pt())
+            else:
                 print("event_id", ev.eventAuxiliary().event())
                 print("gen_pt", gg.pt())
                 print("reco_pt",gg.reco_tau.pt())
@@ -473,7 +481,7 @@ for i, ev in enumerate(events):
                 print("reco_eta", gg.reco_tau.eta())
                 print("gen_phi", gg.phi())
                 print("reco_phi", gg.reco_tau.phi())
-                        
+
     # fill the ntuple: each jet makes an entry
 #     for jj in jets:
 #         for k, v in tofill_jet.iteritems(): tofill_jet[k] = -99. # initialise before filling
