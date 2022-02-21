@@ -162,12 +162,66 @@ for i, ev in enumerate(events):
     # select only hadronically decaying taus
     gen_taus = [pp for pp in gen_particles if abs(pp.pdgId())==15 and \
                 pp.status()==2 and isGenHadTau(pp)]
+    if len(gen_taus) == 0:  continue
 
 
-    # determine gen decaymode
+    # determine gen decaymode and find mother
     for gg in gen_taus:
+
+        ## reset other attributes
+        for ifeat in feat_list:
+            setattr(gg, ifeat, -9999.)
+
         gg.decayMode = tauDecayModes.genDecayModeInt([d for d in finalDaughters(gg) \
                                                       if abs(d.pdgId()) not in [12, 14, 16]])
+        if 'gmsb' in sample:
+            dm_string = genDecayModeGEANT( [d for d in finalDaughters(gg) if abs(d.pdgId()) not in [12, 14, 16]])
+            gg.decayMode = tauDecayModes.nameToInt(dm_string)
+        
+        gg.bestmom = None
+        if gg.numberOfMothers() > 1:
+            ## print 'more than 1 one, taking first one'
+            tau_moms = [imom for imom in ev.gen_particles if isAncestor(imom, gg) and abs(imom.pdgId()) in mom_pdgId]
+            gg.bestmom = tau_moms[0]
+        elif gg.numberOfMothers() == 1 and abs(gg.mother(0).pdgId()) in mom_pdgId:
+            gg.bestmom = gg.mother(0)
+
+        ### find first dau to be used for vertices 
+        gg.dau = None
+        if gg.numberOfDaughters() > 0:  gg.dau = gg.daughter(0)
+        if gg.dau == None:  print 'is none'
+#         else: pdb.set_trace()
+
+        if gg.bestmom == None or gg.dau == None:
+            continue
+        
+
+#     for gg in gen_taus:
+#         print 
+#         pdb.set_trace()
+        gg.dxy = (gg.dau.vy()*gg.px() - gg.dau.vx()*gg.py())/gg.pt()
+
+        if 'taugun' in sample:
+            gg.lxy = sqrt(pow(gg.dau.vx(),2)+pow(gg.dau.vy(),2))
+#             gg.visdxy = (gg.dau.vy()*gg.vispx() - gg.dau.vx()*gg.vispy())/gg.vispt()
+        else:    
+            gg.lxy = sqrt(pow(gg.vx()-gg.bestmom.vx(),2)+pow(gg.vy()-gg.bestmom.vy(),2))
+#             gg.dxy = (gg.dau.vy()*gg.px() - gg.dau.vx()*gg.py())/gg.pt()
+
+        vectorP = np.array([gg.px(), gg.py(), 0])
+        vectorL = np.array([gg.vx()-gg.bestmom.vx(), gg.vy()-gg.bestmom.vy(), 0])
+        gg.cosxy = vectorL.dot(vectorP)/((np.linalg.norm(vectorL) * np.linalg.norm(vectorP)))
+
+        ## gg = tau   bestmom = stau    vx = production point 
+        ## now find tau decay point to stau production point distance 
+        gg.pi_lxy = sqrt(pow(gg.dau.vx()-gg.bestmom.vx(),2) + pow(gg.dau.vy()-gg.bestmom.vy(),2) )
+
+#             stau_vectorP = np.array([bestmom.px(), bestmom.py(), 0])
+#             stau_vectorL = np.array([gg.vx()-bestmom.vx(), gg.vy()-bestmom.vy(), 0])
+#             gg.tau_cosxy  = tau_vectorL.dot(tau_vectorP)/((np.linalg.norm(tau_vectorL) * np.linalg.norm(tau_vectorP)))
+#             l3d = sqrt(pow(gg.vx()-bestmom.vx(),2) + pow(gg.vy()-bestmom.vy(),2) + pow(gg.vz()-bestmom.vz(),2))
+#             if bestmom.p() != 0: gg.momct    = c_const*l3d*bestmom.mass()/bestmom.p()
+        if gg.bestmom.pt() != 0:  gg.momct2d = c_const*gg.lxy*gg.bestmom.mass()/gg.bestmom.pt()
 
     ######################################################################################
     # match reco taus to gen taus
@@ -200,6 +254,37 @@ for i, ev in enumerate(events):
 #         bestmatch = matches[0]
 #         jj.tau = bestmatch
 #         taus_copy = [tt for tt in taus_copy if tt != bestmatch]
+
+    ######################################################################################
+    gen_taus = findMatchToGen(gen_taus, all_taus, 'hlt_pftau_displ')
+
+        for gg in gen_taus:
+            if hasattr(gg, 'hlt_pftau_displ') and gg.hlt_pftau_displ:
+
+                theLeadChargedCand = gg.hlt_pftau_displ.leadChargedHadrCand()
+                theLeadPFCand      = gg.hlt_pftau_displ.leadCand()
+                gg.hlt_pftau_displ.leadChargedCandPt     = theLeadChargedCand.pt()
+                gg.hlt_pftau_displ.leadChargedCandPdgId  = theLeadChargedCand.pdgId()
+                gg.hlt_pftau_displ.leadCandPt            = theLeadPFCand.pt()
+                gg.hlt_pftau_displ.leadCandPdgId         = theLeadPFCand.pdgId()
+
+                gg.hlt_pftau_displ.maxHCALPFClusterEt    = gg.hlt_pftau_displ.maximumHCALPFClusterEt()
+                gg.hlt_pftau_displ.nChargedHad           = gg.hlt_pftau_displ.signalChargedHadrCands().size() 
+                gg.hlt_pftau_displ.nGamma                = gg.hlt_pftau_displ.signalGammaCands().size() 
+
+                sum_pt_charged = 0
+                for ich in range(gg.hlt_pftau_displ.nChargedHad  ) :
+                    sum_pt_charged += gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pt()
+#                     print '\t ch: ', gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pdgId(), '\t', gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pt()
+    
+                sum_pt_neutral = 0
+                for ineu in range(gg.hlt_pftau_displ.nGamma  ) :
+                    sum_pt_neutral += gg.hlt_pftau_displ.signalGammaCands()[ineu].pt()
+#                     print '\t neu: ', gg.hlt_pftau_displ.signalGammaCands()[ineu].pdgId(), '\t', gg.hlt_pftau_displ.signalGammaCands()[ineu].pt()
+
+                gg.hlt_pftau_displ.sum_pt_charged =  sum_pt_charged  
+                gg.hlt_pftau_displ.sum_pt_neutral =  sum_pt_neutral  
+
 
     ######################################################################################
     # fill histograms
@@ -445,6 +530,34 @@ for i, ev in enumerate(events):
             tofill_gen['tau_up_com_eta'      ] = gg.up_com_tau.eta()
             tofill_gen['tau_up_com_phi'      ] = gg.up_com_tau.phi()
             tofill_gen['tau_up_com_charge'   ] = gg.up_com_tau.charge()
+
+        if hasattr(gg, 'hlt_pftau_displ') and gg.hlt_pftau_displ:
+            tofill_gen['tau_hltPFdispltau_mass'     ] = gg.hlt_pftau_displ.mass()
+            tofill_gen['tau_hltPFdispltau_pt'       ] = gg.hlt_pftau_displ.pt()
+            tofill_gen['tau_hltPFdispltau_eta'      ] = gg.hlt_pftau_displ.eta()
+            tofill_gen['tau_hltPFdispltau_phi'      ] = gg.hlt_pftau_displ.phi()
+            tofill_gen['tau_hltPFdispltau_charge'   ] = gg.hlt_pftau_displ.charge()
+            tofill_gen['tau_hltPFdispltau_decaymode'] = gg.hlt_pftau_displ.decayMode()
+            ## new vars
+            tofill_gen['tau_hltPFdispltau_leadChargedCandPdgId'] = gg.hlt_pftau_displ.leadChargedCandPdgId
+            tofill_gen['tau_hltPFdispltau_leadChargedCandPt'   ] = gg.hlt_pftau_displ.leadChargedCandPt
+            tofill_gen['tau_hltPFdispltau_leadPFCandPdgId'     ] = gg.hlt_pftau_displ.leadCandPdgId
+            tofill_gen['tau_hltPFdispltau_leadPFCandPt'        ] = gg.hlt_pftau_displ.leadCandPt
+            tofill_gen['tau_hltPFdispltau_maxHCALPFClusterEt'  ] = gg.hlt_pftau_displ.maxHCALPFClusterEt
+            tofill_gen['tau_hltPFdispltau_nChargedHad'         ] = gg.hlt_pftau_displ.nChargedHad      
+            tofill_gen['tau_hltPFdispltau_nGamma'              ] = gg.hlt_pftau_displ.nGamma 
+            tofill_gen['tau_hltPFdispltau_sumPtCharged'        ] = gg.hlt_pftau_displ.sum_pt_charged 
+            tofill_gen['tau_hltPFdispltau_sumPtNeutral'        ] = gg.hlt_pftau_displ.sum_pt_neutral 
+
+            tofill_gen['tau_hltPFdispltau_dxy'           ] = gg.hlt_pftau_displ.dxy 
+            tofill_gen['tau_hltPFdispltau_dxyerr'        ] = gg.hlt_pftau_displ.dxyerr 
+            tofill_gen['tau_hltPFdispltau_ip3d'          ] = gg.hlt_pftau_displ.ip3d 
+            tofill_gen['tau_hltPFdispltau_ip3derr'       ] = gg.hlt_pftau_displ.ip3derr
+            tofill_gen['tau_hltPFdispltau_passChargedIso'] = gg.hlt_pftau_displ.passChargedIso 
+            tofill_gen['tau_hltPFdispltau_passRelChargedIso'] = gg.hlt_pftau_displ.passRelChargedIso 
+            tofill_gen['tau_hltPFdispltau_passAbsChargedIso'] = gg.hlt_pftau_displ.passAbsChargedIso 
+            tofill_gen['tau_hltPFdispltau_isoval']         = gg.hlt_pftau_displ.isoVal 
+            tofill_gen['tau_hltPFdispltau_passFilters']         = gg.hlt_pftau_displ.passFilters 
 
 
         tofill_gen['tau_gen_pt'        ] = gg.pt()
