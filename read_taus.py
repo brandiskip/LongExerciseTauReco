@@ -101,7 +101,7 @@ handle_lost = Handle('std::vector<pat::PackedCandidate>')
 label_packed = ('packedPFCandidates')
 handle_packed = Handle('std::vector<pat::PackedCandidate')
 # hlt pftaus
-label_packed = ('hpsPFTauProducer', '',  'TAURECO')
+label_hlt_pftaus_displ = ('hpsPFTauProducer', '',  'TAURECO')
 handle_hlt_pftaus_displ = Handle('std::vector<reco::PFTau>')
 
 # instantiate the handles to the relevant collections.
@@ -151,6 +151,11 @@ for i, ev in enumerate(events):
 #
 #     # loosely filter jets
 #     jets = [jet for jet in jets if jet.pt()>18. and abs(jet.eta())<2.5]
+
+    ######################################################################################
+    # access the hlt pftaus
+    ev.getByLabel(label_hlt_pftaus_displ, handle_hlt_pftaus_displ)
+    pftaus = handle_hlt_pftaus_displ.product()
 
     ######################################################################################
     # access the vertices
