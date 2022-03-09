@@ -153,11 +153,6 @@ for i, ev in enumerate(events):
 #     jets = [jet for jet in jets if jet.pt()>18. and abs(jet.eta())<2.5]
 
     ######################################################################################
-    # access the hlt pftaus
-    ev.getByLabel(label_hlt_pftaus_displ, handle_hlt_pftaus_displ)
-    hltpftaus = handle_hlt_pftaus_displ.product()
-
-    ######################################################################################
     # access the vertices
     ev.getByLabel(label_vtx, handle_vtx)
     vertices = handle_vtx.product()
