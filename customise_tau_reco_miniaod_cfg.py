@@ -15,15 +15,14 @@ readFiles = cms.untracked.vstring()
 secFiles = cms.untracked.vstring()
 process.source = cms.Source(
     "PoolSource", fileNames=readFiles, secondaryFileNames=secFiles)
+
 # add , eventsToProcess = cms.untracked.VEventRange('1:958444-1:958444','2:100-2:101') right after secondaryFileNames=secFiles above to run on specific event(s)
 
 # print('\t Max events:', process.maxEvents.input.value())
 
 
 readFiles.extend([
-    'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/HeavyNeutrino_trilepton_M-5_V-0_00639_tau_massiveAndCKM_LO/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/270000/FCE8BD0F-2C74-EA40-A4FC-12C3EE4B0285.root',
-    'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/HeavyNeutrino_trilepton_M-5_V-0_00639_tau_massiveAndCKM_LO/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/270000/F0C6A50F-B346-1B47-9359-5005A3129424.root',
-    'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/HeavyNeutrino_trilepton_M-5_V-0_00639_tau_massiveAndCKM_LO/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/270000/CFC82CF4-FE57-7840-ADC5-4B81AA85899B.root',
+    'root://cms-xrd-global.cern.ch//store/mc/Run3Winter21DRMiniAOD/DYToLL_M-50_TuneCP5_14TeV-pythia8/MINIAODSIM/FlatPU30to80FEVT_112X_mcRun3_2021_realistic_v16-v2/120000/04bc4976-c703-4877-9f90-477eba21642e.root',
     ])
 
 # limit the number of events to be processed
@@ -59,7 +58,7 @@ process.ak4PFJetsRecoTauChargedHadrons.builders[2].qualityCuts.pvFindingAlgo = c
 
 # change the output file name, don't overwrite the original file!
 # process.output.fileName = cms.untracked.string('{}_miniAOD_rerunTauRECO.root'.format("ZTT" if runSignal else "QCD"))
-process.output.fileName = cms.untracked.string('/eos/user/b/bskipwor/HNL_5_Samples/HNL_miniAOD_17_3.root')
+process.output.fileName = cms.untracked.string('/eos/user/b/bskipwor/M200GeVstau/test.root')
 # process.output.outputComands = cms.untracked.vstring(
 #     'drop *',
 #     ''
