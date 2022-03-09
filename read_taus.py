@@ -101,7 +101,7 @@ handle_lost = Handle('std::vector<pat::PackedCandidate>')
 label_packed = ('packedPFCandidates')
 handle_packed = Handle('std::vector<pat::PackedCandidate')
 # hlt pftaus
-label_hlt_pftaus_displ = ('hpsPFTauProducer', '',  'TAURECO')
+label_hlt_pftaus_displ = ('hltHpsPFTauProducerDispl', '',  'MYHLT')
 handle_hlt_pftaus_displ = Handle('std::vector<reco::PFTau>')
 
 # instantiate the handles to the relevant collections.
@@ -155,7 +155,7 @@ for i, ev in enumerate(events):
     ######################################################################################
     # access the hlt pftaus
     ev.getByLabel(label_hlt_pftaus_displ, handle_hlt_pftaus_displ)
-    pftaus = handle_hlt_pftaus_displ.product()
+    hltpftaus = handle_hlt_pftaus_displ.product()
 
     ######################################################################################
     # access the vertices
@@ -264,35 +264,41 @@ for i, ev in enumerate(events):
 #         taus_copy = [tt for tt in taus_copy if tt != bestmatch]
 
     ######################################################################################
-    gen_taus = findMatchToGen(gen_taus, all_taus, 'hlt_pftau_displ')
+    try:
+        ev.getByLabel(label_hlt_pftaus_displ, handle_hlt_pftaus_displ)
+        hlt_pftau = handle_hlt_pftaus_displ.product()
 
-    for gg in gen_taus:
-        if hasattr(gg, 'hlt_pftau_displ') and gg.hlt_pftau_displ:
 
-                theLeadChargedCand = gg.hlt_pftau_displ.leadChargedHadrCand()
-                theLeadPFCand      = gg.hlt_pftau_displ.leadCand()
-                gg.hlt_pftau_displ.leadChargedCandPt     = theLeadChargedCand.pt()
-                gg.hlt_pftau_displ.leadChargedCandPdgId  = theLeadChargedCand.pdgId()
-                gg.hlt_pftau_displ.leadCandPt            = theLeadPFCand.pt()
-                gg.hlt_pftau_displ.leadCandPdgId         = theLeadPFCand.pdgId()
+        gen_taus = findMatchToGen(gen_taus, hlt_pftau, 'hlt_pftau_displ')
 
-                gg.hlt_pftau_displ.maxHCALPFClusterEt    = gg.hlt_pftau_displ.maximumHCALPFClusterEt()
-                gg.hlt_pftau_displ.nChargedHad           = gg.hlt_pftau_displ.signalChargedHadrCands().size()
-                gg.hlt_pftau_displ.nGamma                = gg.hlt_pftau_displ.signalGammaCands().size()
+        for gg in gen_taus:
+            if hasattr(gg, 'hlt_pftau_displ') and gg.hlt_pftau_displ:
 
-                sum_pt_charged = 0
-                for ich in range(gg.hlt_pftau_displ.nChargedHad  ) :
-                    sum_pt_charged += gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pt()
-#                     print '\t ch: ', gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pdgId(), '\t', gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pt()
+                    theLeadChargedCand = gg.hlt_pftau_displ.leadChargedHadrCand()
+                    theLeadPFCand      = gg.hlt_pftau_displ.leadCand()
+                    gg.hlt_pftau_displ.leadChargedCandPt     = theLeadChargedCand.pt()
+                    gg.hlt_pftau_displ.leadChargedCandPdgId  = theLeadChargedCand.pdgId()
+                    gg.hlt_pftau_displ.leadCandPt            = theLeadPFCand.pt()
+                    gg.hlt_pftau_displ.leadCandPdgId         = theLeadPFCand.pdgId()
 
-                sum_pt_neutral = 0
-                for ineu in range(gg.hlt_pftau_displ.nGamma  ) :
-                    sum_pt_neutral += gg.hlt_pftau_displ.signalGammaCands()[ineu].pt()
+                    gg.hlt_pftau_displ.maxHCALPFClusterEt    = gg.hlt_pftau_displ.maximumHCALPFClusterEt()
+                    gg.hlt_pftau_displ.nChargedHad           = gg.hlt_pftau_displ.signalChargedHadrCands().size()
+                    gg.hlt_pftau_displ.nGamma                = gg.hlt_pftau_displ.signalGammaCands().size()
+
+                    sum_pt_charged = 0
+                    for ich in range(gg.hlt_pftau_displ.nChargedHad  ) :
+                        sum_pt_charged += gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pt()
+#                       print '\t ch: ', gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pdgId(), '\t', gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pt()
+
+                    sum_pt_neutral = 0
+                    for ineu in range(gg.hlt_pftau_displ.nGamma  ) :
+                        sum_pt_neutral += gg.hlt_pftau_displ.signalGammaCands()[ineu].pt()
 #                     print '\t neu: ', gg.hlt_pftau_displ.signalGammaCands()[ineu].pdgId(), '\t', gg.hlt_pftau_displ.signalGammaCands()[ineu].pt()
 
-                gg.hlt_pftau_displ.sum_pt_charged =  sum_pt_charged
-                gg.hlt_pftau_displ.sum_pt_neutral =  sum_pt_neutral
-
+                    gg.hlt_pftau_displ.sum_pt_charged =  sum_pt_charged
+                    gg.hlt_pftau_displ.sum_pt_neutral =  sum_pt_neutral
+    except:
+        print("collection not found")
 
     ######################################################################################
     # fill histograms
