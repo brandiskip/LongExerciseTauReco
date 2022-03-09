@@ -22,7 +22,7 @@ process.source = cms.Source(
 
 
 readFiles.extend([
-    'root://cms-xrd-global.cern.ch//store/mc/Run3Winter21DRMiniAOD/DYToLL_M-50_TuneCP5_14TeV-pythia8/MINIAODSIM/FlatPU30to80FEVT_112X_mcRun3_2021_realistic_v16-v2/120000/04bc4976-c703-4877-9f90-477eba21642e.root',
+    'root://cms-xrd-global.cern.ch//store/group/phys_bphys/fiorendi/p5prime/displTaus/Staus_M_200_100mm_14TeV_Run3MC/crab_ntuples_gmsb_m200_100mm_12_3_0pre3_v33_useSingleTauL1SeedForAll_standardPFIso_onAOD/220207_122949/0000/outputHLT_1.root',
     ])
 
 # limit the number of events to be processed
@@ -58,7 +58,7 @@ process.ak4PFJetsRecoTauChargedHadrons.builders[2].qualityCuts.pvFindingAlgo = c
 
 # change the output file name, don't overwrite the original file!
 # process.output.fileName = cms.untracked.string('{}_miniAOD_rerunTauRECO.root'.format("ZTT" if runSignal else "QCD"))
-process.output.fileName = cms.untracked.string('/eos/user/b/bskipwor/M200GeVstau/test.root')
+process.output.fileName = cms.untracked.string('/eos/user/b/bskipwor/M200GeVstau/outputHLT_1.root')
 # process.output.outputComands = cms.untracked.vstring(
 #     'drop *',
 #     ''
