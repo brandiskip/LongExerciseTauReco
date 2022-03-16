@@ -4,8 +4,9 @@ It produces two flat ntuples:
     - one with an entry for each gen tau (useful for efficiencies)
     - one with an entry for each reconstructed tau (useful for fake studies)
 '''
-import ROOT, sys, os, pdb, argparse
 import numpy as np
+import ROOT
+import sys, os, pdb, argparse
 from array import array
 from collections import OrderedDict
 from DataFormats.FWLite import Events, Handle
@@ -16,7 +17,7 @@ from utils import isGenHadTau, finalDaughters, printer, genDecayModeGEANT, isAnc
 from math import sqrt, pow
 from copy import deepcopy as dc
 from itertools import product as itertools_product
-print("Line 19")
+
 
 parser = argparse.ArgumentParser(
 		    description="Convert MiniAOD to flat ntuples!")
@@ -53,7 +54,8 @@ tofill_gen = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all b
 ##########################################################################################
 # Get ahold of the events
 f = open('%s_filelist.txt'%args.sample)
-infile=f.readlines()[ifile]
+print(f)
+infile = f.readlines()[ifile]
 
 #events = Events('root://cms-xrd-global.cern.ch/'+infile) # make sure this corresponds to your file name!
 events = Events(infile.strip()) # make sure this corresponds to your file name!
