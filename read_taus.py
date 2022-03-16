@@ -4,20 +4,19 @@ It produces two flat ntuples:
     - one with an entry for each gen tau (useful for efficiencies)
     - one with an entry for each reconstructed tau (useful for fake studies)
 '''
-import ROOT
+import ROOT, sys, os, pdb, argparse
+import numpy as np
 from array import array
 from collections import OrderedDict
 from DataFormats.FWLite import Events, Handle
 from PhysicsTools.HeppyCore.utils.deltar import deltaR, deltaPhi, bestMatch
 from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
 from treeVariables import branches # here the ntuple branches are defined
-from utils import isGenHadTau, finalDaughters, printer # utility functions
-import sys
-import argparse
-import pdb
+from utils import isGenHadTau, finalDaughters, printer, genDecayModeGEANT, isAncestor # utility functions
 from math import sqrt, pow
-
-import numpy as np
+from copy import deepcopy as dc
+from itertools import product as itertools_product
+print("Line 19")
 
 parser = argparse.ArgumentParser(
 		    description="Convert MiniAOD to flat ntuples!")
@@ -37,9 +36,10 @@ parser.add_argument(
 args = parser.parse_args()
 ifile = args.file
 sample = args.sample
-mom_pdgId = 1000015
-if 'HNL' in sample:  mom_pdgId = 9900012
-if 'HNL' in sample and 'Dirac' in sample:  mom_pdgId = 9990012
+
+mom_pdgId = [1000015]
+if 'HNL' in sample:  mom_pdgId = [9900012]
+if 'HNL' in sample and 'Dirac' in sample:  mom_pdgId = [9990012]
 ##########################################################################################
 # initialise output files to save the flat ntuples
 outfile_gen = ROOT.TFile('tau_gentau_tuple_{}_{}.root'.format(sample,ifile), 'recreate')
@@ -146,16 +146,16 @@ for i, ev in enumerate(events):
 
     ######################################################################################
     # access the jets
-    ev.getByLabel(label_jets, handle_jets)
-    jets = handle_jets.product()
+#    ev.getByLabel(label_jets, handle_jets)
+#    jets = handle_jets.product()
 #
-#     # loosely filter jets
+     # loosely filter jets
 #     jets = [jet for jet in jets if jet.pt()>18. and abs(jet.eta())<2.5]
 
     ######################################################################################
     # access the vertices
-    ev.getByLabel(label_vtx, handle_vtx)
-    vertices = handle_vtx.product()
+#    ev.getByLabel(label_vtx, handle_vtx)
+#    vertices = handle_vtx.product()
 
     ######################################################################################
     # access the gen taus
@@ -167,6 +167,7 @@ for i, ev in enumerate(events):
                 pp.status()==2 and isGenHadTau(pp)]
     if len(gen_taus) == 0:  continue
 
+    print("line 170")
 
     # determine gen decaymode and find mother
     for gg in gen_taus:
@@ -269,29 +270,29 @@ for i, ev in enumerate(events):
         for gg in gen_taus:
             if hasattr(gg, 'hlt_pftau_displ') and gg.hlt_pftau_displ:
 
-                    theLeadChargedCand = gg.hlt_pftau_displ.leadChargedHadrCand()
-                    theLeadPFCand      = gg.hlt_pftau_displ.leadCand()
-                    gg.hlt_pftau_displ.leadChargedCandPt     = theLeadChargedCand.pt()
-                    gg.hlt_pftau_displ.leadChargedCandPdgId  = theLeadChargedCand.pdgId()
-                    gg.hlt_pftau_displ.leadCandPt            = theLeadPFCand.pt()
-                    gg.hlt_pftau_displ.leadCandPdgId         = theLeadPFCand.pdgId()
+                theLeadChargedCand = gg.hlt_pftau_displ.leadChargedHadrCand()
+                theLeadPFCand      = gg.hlt_pftau_displ.leadCand()
+                gg.hlt_pftau_displ.leadChargedCandPt     = theLeadChargedCand.pt()
+                gg.hlt_pftau_displ.leadChargedCandPdgId  = theLeadChargedCand.pdgId()
+                gg.hlt_pftau_displ.leadCandPt            = theLeadPFCand.pt()
+                gg.hlt_pftau_displ.leadCandPdgId         = theLeadPFCand.pdgId()
 
-                    gg.hlt_pftau_displ.maxHCALPFClusterEt    = gg.hlt_pftau_displ.maximumHCALPFClusterEt()
-                    gg.hlt_pftau_displ.nChargedHad           = gg.hlt_pftau_displ.signalChargedHadrCands().size()
-                    gg.hlt_pftau_displ.nGamma                = gg.hlt_pftau_displ.signalGammaCands().size()
+                gg.hlt_pftau_displ.maxHCALPFClusterEt    = gg.hlt_pftau_displ.maximumHCALPFClusterEt()
+                gg.hlt_pftau_displ.nChargedHad           = gg.hlt_pftau_displ.signalChargedHadrCands().size()
+                gg.hlt_pftau_displ.nGamma                = gg.hlt_pftau_displ.signalGammaCands().size()
 
-                    sum_pt_charged = 0
-                    for ich in range(gg.hlt_pftau_displ.nChargedHad  ) :
-                        sum_pt_charged += gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pt()
-#                       print '\t ch: ', gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pdgId(), '\t', gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pt()
+                sum_pt_charged = 0
+                for ich in range(gg.hlt_pftau_displ.nChargedHad  ) :
+                    sum_pt_charged += gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pt()
+#                   print '\t ch: ', gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pdgId(), '\t', gg.hlt_pftau_displ.signalChargedHadrCands()[ich].pt()
 
-                    sum_pt_neutral = 0
-                    for ineu in range(gg.hlt_pftau_displ.nGamma  ) :
-                        sum_pt_neutral += gg.hlt_pftau_displ.signalGammaCands()[ineu].pt()
-#                     print '\t neu: ', gg.hlt_pftau_displ.signalGammaCands()[ineu].pdgId(), '\t', gg.hlt_pftau_displ.signalGammaCands()[ineu].pt()
+                sum_pt_neutral = 0
+                for ineu in range(gg.hlt_pftau_displ.nGamma  ) :
+                    sum_pt_neutral += gg.hlt_pftau_displ.signalGammaCands()[ineu].pt()
+#                   print '\t neu: ', gg.hlt_pftau_displ.signalGammaCands()[ineu].pdgId(), '\t', gg.hlt_pftau_displ.signalGammaCands()[ineu].pt()
 
-                    gg.hlt_pftau_displ.sum_pt_charged =  sum_pt_charged
-                    gg.hlt_pftau_displ.sum_pt_neutral =  sum_pt_neutral
+                gg.hlt_pftau_displ.sum_pt_charged =  sum_pt_charged
+                gg.hlt_pftau_displ.sum_pt_neutral =  sum_pt_neutral
     except:
         print("collection not found")
 
