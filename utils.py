@@ -133,24 +133,24 @@ def genDecayModeGEANT(daughters):
 def isAncestor(a, p):
     if a == p :
         return True
-    for i in xrange(0,p.numberOfMothers()):
+    for i in range(0,p.numberOfMothers()):
         if isAncestor(a,p.mother(i)):
             return True
     return False
 
 # print tau reco/gen information in a nicely laid out format
 def printer(taus, gen_taus):
-    print '\n\n===========> RECO TAUS'
+    print('\n\n===========> RECO TAUS')
     for tt in taus: 
-        print 'reco tau         pt %.3f eta %.3f phi %.3f' %(tt.pt(), tt.eta(), tt.phi())
+        print('reco tau         pt %.3f eta %.3f phi %.3f' %(tt.pt(), tt.eta(), tt.phi()))
         if hasattr(tt, 'gen_tau') and tt.gen_tau:
-            print 'matched gen tau  pt %.3f eta %.3f phi %.3f' %(tt.gen_tau.vispt(), tt.gen_tau.viseta(), tt.gen_tau.visphi())
+            print('matched gen tau  pt %.3f eta %.3f phi %.3f' %(tt.gen_tau.vispt(), tt.gen_tau.viseta(), tt.gen_tau.visphi()))
         else:
-            print 'matched gen tau  MISSING'
-    print '===========> GEN TAUS'
+            print('matched gen tau  MISSING')
+    print('===========> GEN TAUS')
     for gg in gen_taus: 
-        print 'gen tau          pt %.3f eta %.3f phi %.3f' %(gg.vispt(), gg.viseta(), gg.visphi())
+        print('gen tau          pt %.3f eta %.3f phi %.3f' %(gg.vispt(), gg.viseta(), gg.visphi()))
         if hasattr(gg, 'reco_tau') and gg.reco_tau:
-            print 'matched reco tau pt %.3f eta %.3f phi %.3f' %(gg.reco_tau.pt(), gg.reco_tau.eta(), gg.reco_tau.phi())
+            print('matched reco tau pt %.3f eta %.3f phi %.3f' %(gg.reco_tau.pt(), gg.reco_tau.eta(), gg.reco_tau.phi()))
         else:
-            print 'matched reco tau MISSING'
+            print('matched reco tau MISSING')
