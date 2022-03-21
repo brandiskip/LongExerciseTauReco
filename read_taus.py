@@ -45,7 +45,7 @@ if 'HNL' in sample and 'Dirac' in sample:  mom_pdgId = [9990012]
 # initialise output files to save the flat ntuples
 outfile_gen = ROOT.TFile('tau_gentau_tuple_{}_{}.root'.format(sample,ifile), 'recreate')
 ntuple_gen = ROOT.TNtuple('tree', 'tree', ':'.join(branches))
-tofill_gen = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all branches to unphysical -99
+tofill_gen = OrderedDict(list(zip(branches, [-99.]*len(branches)))) # initialise all branches to unphysical -99
 
 # outfile_jet = ROOT.TFile('tau_jet_tuple_{}_{}.root'.format(sample,ifile), 'recreate')
 # ntuple_jet = ROOT.TNtuple('tree', 'tree', ':'.join(branches))
@@ -54,7 +54,6 @@ tofill_gen = OrderedDict(zip(branches, [-99.]*len(branches))) # initialise all b
 ##########################################################################################
 # Get ahold of the events
 f = open('%s_filelist.txt'%args.sample)
-print(f)
 infile = f.readlines()[ifile]
 
 #events = Events('root://cms-xrd-global.cern.ch/'+infile) # make sure this corresponds to your file name!
@@ -66,7 +65,7 @@ totevents = events.size() # total number of events in the files
 def isAncestor(a, p):
     if a == p :
         return True
-    for i in xrange(0,p.numberOfMothers()):
+    for i in range(0,p.numberOfMothers()):
         if isAncestor(a,p.mother(i)):
             return True
     return False
@@ -85,7 +84,7 @@ handle_taus = Handle('std::vector<pat::Tau>')
 label_jets = ('slimmedJets', '', 'PAT')
 handle_jets = Handle('std::vector<pat::Jet>')
 # gen particles
-label_gen  = ('prunedGenParticles', '', 'PAT')
+label_gen  = ('genParticlePlusGeant', '', 'SIM')
 handle_gen = Handle('std::vector<reco::GenParticle>')
 # vertices
 handle_vtx = Handle('std::vector<reco::Vertex>')
@@ -132,7 +131,7 @@ for i, ev in enumerate(events):
         break
 
     if i%100==0:
-        print '===> processing %d / %d event' %(i, totevents)
+        print('===> processing %d / %d event' %(i, totevents))
 
 #     for k, v in handles.iteritems():
 #         ev.getByLabel(v[0], v[1])
@@ -166,10 +165,10 @@ for i, ev in enumerate(events):
 
     # select only hadronically decaying taus
     gen_taus = [pp for pp in gen_particles if abs(pp.pdgId())==15 and \
-                pp.status()==2 and isGenHadTau(pp)]
-    if len(gen_taus) == 0:  continue
+                pp.status()==2 and isGenHadTau(pp) and\
+                pp.pt()>10 and abs(pp.eta()) < 2.1]
 
-    print("line 170")
+    if len(gen_taus) == 0:  continue
 
     # determine gen decaymode and find mother
     for gg in gen_taus:
@@ -195,7 +194,7 @@ for i, ev in enumerate(events):
         ### find first dau to be used for vertices
         gg.dau = None
         if gg.numberOfDaughters() > 0:  gg.dau = gg.daughter(0)
-        if gg.dau == None:  print 'is none'
+        if gg.dau == None:  print('is none')
 #         else: pdb.set_trace()
 
         if gg.bestmom == None or gg.dau == None:
@@ -381,7 +380,7 @@ for i, ev in enumerate(events):
     for l1 in l1_taus:
         matches = [gg for gg in gen_taus_copy if deltaR(l1.p4(), gg.visp4)<0.3]
         ave_matches = len(matches)
-        if ave_matches > 1:  print ave_matches
+        if ave_matches > 1:  print(ave_matches)
         if not len(matches):
             continue
         matches.sort(key = lambda gg : deltaR(l1.p4(), gg.visp4))
@@ -407,7 +406,7 @@ for i, ev in enumerate(events):
     for l1 in l1_jets:
         matches = [gg for gg in gen_taus_copy if deltaR(l1.p4(), gg.visp4)<0.3]
         ave_matches = len(matches)
-        if ave_matches > 1:  print ave_matches
+        if ave_matches > 1:  print(ave_matches)
         if not len(matches):
             continue
         matches.sort(key = lambda gg : deltaR(l1.p4(), gg.visp4))
@@ -450,9 +449,9 @@ for i, ev in enumerate(events):
                 al_eta.append(aeta)
                 aphi = abs(jj.phi() - gg.phi())
                 al_phi.append(aphi)
-        print("min_diff_pt", min(al_pt))
-        print("min_diff_eta", min(al_eta))
-        print("min_diff_phi", min(al_phi))
+        print(("min_diff_pt", min(al_pt)))
+        print(("min_diff_eta", min(al_eta)))
+        print(("min_diff_phi", min(al_phi)))
 
 
     ## skim comtracks collection to keep only PFcands that are "close" in dR and dPt from at least a gen tau
@@ -460,7 +459,7 @@ for i, ev in enumerate(events):
     for cc in comtracks:
         found = False
         for gg in gen_taus :
-            if found == False and (abs(cc.pt() - gg.vispt())<0.2*gg.vispt()) and ( deltaR(cc.p4(), gg.visp4)<0.3) :
+            if found == False and (abs(cc.pt() - gg.vispt())<0.2*gg.vispt()) and ( deltaR(cc.p4(), gg.visp4)<0.5) :
                 comtracks_matchable.append(cc)
                 found = True
 
@@ -496,7 +495,7 @@ for i, ev in enumerate(events):
     # fill the ntuple: each gen tau makes an entry
 
     for gg in gen_taus:
-        for k, v in tofill_gen.iteritems(): tofill_gen[k] = -99. # initialise before filling
+        for k, v in tofill_gen.items(): tofill_gen[k] = -99. # initialise before filling
         tofill_gen['run'               ] = ev.eventAuxiliary().run()
         tofill_gen['lumi'              ] = ev.eventAuxiliary().luminosityBlock()
         tofill_gen['event'             ] = ev.eventAuxiliary().event()
@@ -589,23 +588,23 @@ for i, ev in enumerate(events):
         tofill_gen['tau_gen_vis_pt'    ] = gg.vispt()
         tofill_gen['tau_gen_vis_eta'   ] = gg.viseta()
         tofill_gen['tau_gen_vis_phi'   ] = gg.visphi()
-        ntuple_gen.Fill(array('f',tofill_gen.values()))
+        ntuple_gen.Fill(array('f',list(tofill_gen.values())))
 
         # if reco matches gen but comtracks does not match gen, prints event ID and pt, eta, phi for gen and reco
         if hasattr(gg, 'reco_tau') and gg.reco_tau and gg.decayMode==0:
             if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
                 print("both")
-                print("event_id", ev.eventAuxiliary().event())
-                print("gen_pt", gg.pt())
-                print("reco_pt",gg.reco_tau.pt())
+                print(("event_id", ev.eventAuxiliary().event()))
+                print(("gen_pt", gg.pt()))
+                print(("reco_pt",gg.reco_tau.pt()))
             else:
-                print("event_id", ev.eventAuxiliary().event())
-                print("gen_pt", gg.pt())
-                print("reco_pt",gg.reco_tau.pt())
-                print("gen_eta", gg.eta())
-                print("reco_eta", gg.reco_tau.eta())
-                print("gen_phi", gg.phi())
-                print("reco_phi", gg.reco_tau.phi())
+                print(("event_id", ev.eventAuxiliary().event()))
+                print(("gen_pt", gg.pt()))
+                print(("reco_pt",gg.reco_tau.pt()))
+                print(("gen_eta", gg.eta()))
+                print(("reco_eta", gg.reco_tau.eta()))
+                print(("gen_phi", gg.phi()))
+                print(("reco_phi", gg.reco_tau.phi()))
 
     # fill the ntuple: each jet makes an entry
 #     for jj in jets:
