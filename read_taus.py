@@ -38,9 +38,12 @@ args = parser.parse_args()
 ifile = args.file
 sample = args.sample
 
+#########################################################################################
+feat_list = ['lxy', 'dxy', 'visdxy', 'cosxy', 'momct', 'momct2d', 'mom_mass', 'pi_lxy', 'pi_cosxy' ]
 mom_pdgId = [1000015]
 if 'HNL' in sample:  mom_pdgId = [9900012]
 if 'HNL' in sample and 'Dirac' in sample:  mom_pdgId = [9990012]
+
 ##########################################################################################
 # initialise output files to save the flat ntuples
 outfile_gen = ROOT.TFile('tau_gentau_tuple_{}_{}.root'.format(sample,ifile), 'recreate')
@@ -80,30 +83,54 @@ def isAncestor(a, p):
 #label_taus = ('slimmedTaus', '', 'PAT')
 label_taus = ('selectedPatTaus', '', 'TAURECO')
 handle_taus = Handle('std::vector<pat::Tau>')
+
 # PAT jets
-label_jets = ('slimmedJets', '', 'PAT')
-handle_jets = Handle('std::vector<pat::Jet>')
+#label_jets = ('slimmedJets', '', 'PAT')
+#handle_jets = Handle('std::vector<pat::Jet>')
+
 # gen particles
 label_gen  = ('genParticlePlusGeant', '', 'SIM')
 handle_gen = Handle('std::vector<reco::GenParticle>')
+
+# AOD
 # vertices
 handle_vtx = Handle('std::vector<reco::Vertex>')
-label_vtx  = ('offlineSlimmedPrimaryVertices','','PAT')
+label_vtx  = ('offlinePrimaryVertices','','RECO')
+
 # L1 taus
 handle_l1 = Handle('BXVector<l1t::Tau>')
 label_l1  = ('caloStage2Digis','Tau','RECO')
+
 # L1 jet
 handle_l1j = Handle('BXVector<l1t::Jet>')
 label_l1j  = ('caloStage2Digis','Jet','RECO')
-# lost tracks
-label_lost = ('lostTracks', '', 'PAT')
-handle_lost = Handle('std::vector<pat::PackedCandidate>')
-# packed PFCandidates
-label_packed = ('packedPFCandidates')
-handle_packed = Handle('std::vector<pat::PackedCandidate')
+
+# general tracks
+label_general = ('generalTracks', '', 'RECO')
+handle_general = Handle('std::vector<reco::Track>')
+
 # hlt pftaus
 label_hlt_pftaus_displ = ('hltHpsPFTauProducerDispl', '',  'MYHLT')
 handle_hlt_pftaus_displ = Handle('std::vector<reco::PFTau>')
+
+# MINIAOD
+#########################################################################################
+# gen particles
+#label_gen  = ('genParticle', '', 'SIM')
+#handle_gen = Handle('std::vector<reco::GenParticle>')
+
+# vertices
+#handle_vtx = Handle('std::vector<reco::Vertex>')
+#label_vtx  = ('offlineSlimmedPrimaryVertices','','PAT')
+
+# lost tracks
+#label_lost = ('lostTracks', '', 'PAT')
+#handle_lost = Handle('std::vector<pat::PackedCandidate>')
+
+# packed PFCandidates
+#label_packed = ('packedPFCandidates')
+#handle_packed = Handle('std::vector<pat::PackedCandidate')
+#########################################################################################
 
 # instantiate the handles to the relevant collections.
 # handles = OrderedDict()
@@ -155,8 +182,8 @@ for i, ev in enumerate(events):
 
     ######################################################################################
     # access the vertices
-#    ev.getByLabel(label_vtx, handle_vtx)
-#    vertices = handle_vtx.product()
+    #ev.getByLabel(label_vtx, handle_vtx)
+    #vertices = handle_vtx.product()
 
     ######################################################################################
     # access the gen taus
@@ -165,7 +192,7 @@ for i, ev in enumerate(events):
 
     # select only hadronically decaying taus
     gen_taus = [pp for pp in gen_particles if abs(pp.pdgId())==15 and \
-                pp.status()==2 and isGenHadTau(pp) and\
+                pp.status()==8 and isGenHadTau(pp) and\
                 pp.pt()>10 and abs(pp.eta()) < 2.1]
 
     if len(gen_taus) == 0:  continue
@@ -417,25 +444,25 @@ for i, ev in enumerate(events):
 
     ######################################################################################
     # access the lost tracks
-    ev.getByLabel(label_lost, handle_lost)
-    lost = handle_lost.product()
+    #ev.getByLabel(label_lost, handle_lost)
+    #lost = handle_lost.product()
 
     # only keep pion candidates
-    lost_tracks = [ll for ll in lost if abs(ll.pdgId())==211]
+    #lost_tracks = [ll for ll in lost if abs(ll.pdgId())==211]
 
     ######################################################################################
     # access packed PFCandidates
-    ev.getByLabel(label_packed, handle_packed)
-    packed = handle_packed.product()
+    #ev.getByLabel(label_packed, handle_packed)
+    #packed = handle_packed.product()
 
     # only keep pion candidates
-    packed_tracks = [ff for ff in packed if abs(ll.pdgId())==211]
+    #packed_tracks = [ff for ff in packed if abs(ll.pdgId())==211]
 
     ######################################################################################
     # add together lost tracks and packed PFCandidates
-    comtracks = lost_tracks + packed_tracks
+    #comtracks = lost_tracks + packed_tracks
 
-
+    '''
     # takes event number as input if matched reco and not matched comtracks to gen tau for 1-prong
     if ev.eventAuxiliary().event() == 416082:
         al_pt  = []
@@ -459,7 +486,7 @@ for i, ev in enumerate(events):
     for cc in comtracks:
         found = False
         for gg in gen_taus :
-            if found == False and (abs(cc.pt() - gg.vispt())<0.2*gg.vispt()) and ( deltaR(cc.p4(), gg.visp4)<0.5) :
+            if found == False and (abs(cc.pt() - gg.vispt())<0.2*gg.vispt()) and ( deltaR(cc.p4(), gg.visp4)<0.3) :
                 comtracks_matchable.append(cc)
                 found = True
 
@@ -472,7 +499,7 @@ for i, ev in enumerate(events):
           gg.up_com_tau = bestcom[0]
 
 
-    '''
+
     ## original version, using same approach as for reco_taus
     # match combined lost and PFCandidate tracks to gen taus
     for cc in comtracks : cc.gen_tau = None # first initialise the matching to None
@@ -489,7 +516,7 @@ for i, ev in enumerate(events):
         cc.gen_tau = bestmatch
         bestmatch.com_tau = cc
         gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
-    '''
+        '''
 
     ######################################################################################
     # fill the ntuple: each gen tau makes an entry
@@ -499,10 +526,10 @@ for i, ev in enumerate(events):
         tofill_gen['run'               ] = ev.eventAuxiliary().run()
         tofill_gen['lumi'              ] = ev.eventAuxiliary().luminosityBlock()
         tofill_gen['event'             ] = ev.eventAuxiliary().event()
-        tofill_gen['nvtx'              ] = vertices.size()
-        tofill_gen['PV_x'              ] = vertices[0].x()
-        tofill_gen['PV_y'              ] = vertices[0].y()
-        tofill_gen['PV_z'              ] = vertices[0].z()
+        #tofill_gen['nvtx'              ] = vertices.size()
+        #tofill_gen['PV_x'              ] = vertices[0].x()
+        #tofill_gen['PV_y'              ] = vertices[0].y()
+        #tofill_gen['PV_z'              ] = vertices[0].z()
         if hasattr(gg, 'reco_tau') and gg.reco_tau:
             tofill_gen['tau_reco_mass'     ] = gg.reco_tau.mass()
             tofill_gen['tau_reco_pt'       ] = gg.reco_tau.pt()
@@ -512,7 +539,7 @@ for i, ev in enumerate(events):
             tofill_gen['tau_reco_decaymode'] = gg.reco_tau.decayMode()
             tofill_gen['tau_reco_ip3d'     ] = gg.reco_tau.ip3d()
             tofill_gen['tau_reco_dxy'      ] = gg.reco_tau.dxy()
-            tofill_gen['tau_reco_pixel'    ] = gg.reco_tau.leadChargedHadrCand().numberOfPixelHits()
+            #tofill_gen['tau_reco_pixel'    ] = gg.reco_tau.leadChargedHadrCand().numberOfPixelHits()
 
         if hasattr(gg, 'l1_tau') and gg.l1_tau:
 #           tofill_gen['tau_l1_mass'     ] = gg.reco_tau.mass()
