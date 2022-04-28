@@ -41,6 +41,7 @@ sample = args.sample
 #########################################################################################
 feat_list = ['lxy', 'dxy', 'visdxy', 'cosxy', 'momct', 'momct2d', 'mom_mass', 'pi_lxy', 'pi_cosxy' ]
 mom_pdgId = [1000015]
+dR_cone = 0.1
 if 'HNL' in sample:  mom_pdgId = [9900012]
 if 'HNL' in sample and 'Dirac' in sample:  mom_pdgId = [9990012]
 
@@ -72,6 +73,19 @@ def isAncestor(a, p):
         if isAncestor(a,p.mother(i)):
             return True
     return False
+
+def findMatchToGen(gen_taus, hlt_taus, hlt_tau):
+    gen_taus_match = gen_taus
+    for gg in gen_taus_match:
+        setattr(gg, hlt_tau, None)
+        bestcom = bestMatch(gg.visp4, hlt_taus )
+        print(gg.visp4)
+        if bestcom[0] != None and sqrt(bestcom[1]) < dR_cone :
+            setattr(gg,hlt_tau,bestcom[0])
+#             if hlt_tau=='hlt_pftau_displ':  pdb.set_trace()
+            print("found one", hlt_tau)
+    return gen_taus_imatch
+
 
 ##########################################################################################
 # instantiate the handles to the relevant collections.
@@ -182,8 +196,8 @@ for i, ev in enumerate(events):
 
     ######################################################################################
     # access the vertices
-    #ev.getByLabel(label_vtx, handle_vtx)
-    #vertices = handle_vtx.product()
+    ev.getByLabel(label_vtx, handle_vtx)
+    vertices = handle_vtx.product()
 
     ######################################################################################
     # access the gen taus
@@ -292,7 +306,6 @@ for i, ev in enumerate(events):
         ev.getByLabel(label_hlt_pftaus_displ, handle_hlt_pftaus_displ)
         hlt_pftau = handle_hlt_pftaus_displ.product()
 
-
         gen_taus = findMatchToGen(gen_taus, hlt_pftau, 'hlt_pftau_displ')
 
         for gg in gen_taus:
@@ -321,6 +334,7 @@ for i, ev in enumerate(events):
 
                 gg.hlt_pftau_displ.sum_pt_charged =  sum_pt_charged
                 gg.hlt_pftau_displ.sum_pt_neutral =  sum_pt_neutral
+#                print("hlt_pftau_displ collection found")
     except:
         print("collection not found")
 
@@ -443,6 +457,30 @@ for i, ev in enumerate(events):
         gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
 
     ######################################################################################
+    #access general tracks
+    ev.getByLabel(label_general, handle_general)
+    general = handle_general.product()
+
+    general = [tau for tau in general if tau.pt()>15]
+
+    # match general tracks to gen taus
+    for rr in general : rr.gen_tau = None # first initialise the matching to None
+    for gg in gen_taus: gg.generals  = None # first initialise the matching to None
+
+    gen_taus_copy = gen_taus # we'll cyclically remove any gen taus that gets matched
+
+    for rr in general:
+        matches = [gg for gg in gen_taus_copy if deltaR(rr.momentum(), gg.visp4)<0.5 and abs(rr.pt() - gg.vispt())<0.4*gg.vispt()]
+        if not len(matches):
+            continue
+        matches.sort(key = lambda gg : deltaR(rr.momentum(), gg.visp4))
+        bestmatch = matches[0]
+        rr.gen_tau = bestmatch
+        bestmatch.generals = rr
+        gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
+
+
+    ######################################################################################
     # access the lost tracks
     #ev.getByLabel(label_lost, handle_lost)
     #lost = handle_lost.product()
@@ -526,10 +564,10 @@ for i, ev in enumerate(events):
         tofill_gen['run'               ] = ev.eventAuxiliary().run()
         tofill_gen['lumi'              ] = ev.eventAuxiliary().luminosityBlock()
         tofill_gen['event'             ] = ev.eventAuxiliary().event()
-        #tofill_gen['nvtx'              ] = vertices.size()
-        #tofill_gen['PV_x'              ] = vertices[0].x()
-        #tofill_gen['PV_y'              ] = vertices[0].y()
-        #tofill_gen['PV_z'              ] = vertices[0].z()
+        tofill_gen['nvtx'              ] = vertices.size()
+        tofill_gen['PV_x'              ] = vertices[0].x()
+        tofill_gen['PV_y'              ] = vertices[0].y()
+        tofill_gen['PV_z'              ] = vertices[0].z()
         if hasattr(gg, 'reco_tau') and gg.reco_tau:
             tofill_gen['tau_reco_mass'     ] = gg.reco_tau.mass()
             tofill_gen['tau_reco_pt'       ] = gg.reco_tau.pt()
@@ -556,18 +594,24 @@ for i, ev in enumerate(events):
             tofill_gen['jet_l1_phi'      ] = gg.l1_jet.phi()
             tofill_gen['jet_l1_charge'   ] = gg.l1_jet.charge()
 
-        if hasattr(gg, 'com_tau') and gg.com_tau:
-            tofill_gen['tau_com_pt'       ] = gg.com_tau.pt()
-            tofill_gen['tau_com_eta'      ] = gg.com_tau.eta()
-            tofill_gen['tau_com_phi'      ] = gg.com_tau.phi()
-            tofill_gen['tau_com_charge'   ] = gg.com_tau.charge()
+        if hasattr(gg, 'generals') and gg.generals:
+            tofill_gen['tau_general_pt      '] = gg.generals.pt()
+            tofill_gen['tau_general_eta     '] = gg.generals.eta()
+            tofill_gen['tau_general_phi     '] = gg.generals.phi()
+            tofill_gen['tau_general_charge  '] = gg.generals.charge()
+
+#        if hasattr(gg, 'com_tau') and gg.com_tau:
+#            tofill_gen['tau_com_pt'       ] = gg.com_tau.pt()
+#            tofill_gen['tau_com_eta'      ] = gg.com_tau.eta()
+#            tofill_gen['tau_com_phi'      ] = gg.com_tau.phi()
+#            tofill_gen['tau_com_charge'   ] = gg.com_tau.charge()
 #            tofill_gen['tau_com_pixel'    ] = gg.com_tau.numberOfPixelHits()
 
-        if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
-            tofill_gen['tau_up_com_pt'       ] = gg.up_com_tau.pt()
-            tofill_gen['tau_up_com_eta'      ] = gg.up_com_tau.eta()
-            tofill_gen['tau_up_com_phi'      ] = gg.up_com_tau.phi()
-            tofill_gen['tau_up_com_charge'   ] = gg.up_com_tau.charge()
+#        if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
+#            tofill_gen['tau_up_com_pt'       ] = gg.up_com_tau.pt()
+#            tofill_gen['tau_up_com_eta'      ] = gg.up_com_tau.eta()
+#            tofill_gen['tau_up_com_phi'      ] = gg.up_com_tau.phi()
+#            tofill_gen['tau_up_com_charge'   ] = gg.up_com_tau.charge()
 
         if hasattr(gg, 'hlt_pftau_displ') and gg.hlt_pftau_displ:
             tofill_gen['tau_hltPFdispltau_mass'     ] = gg.hlt_pftau_displ.mass()
@@ -587,15 +631,15 @@ for i, ev in enumerate(events):
             tofill_gen['tau_hltPFdispltau_sumPtCharged'        ] = gg.hlt_pftau_displ.sum_pt_charged
             tofill_gen['tau_hltPFdispltau_sumPtNeutral'        ] = gg.hlt_pftau_displ.sum_pt_neutral
 
-            tofill_gen['tau_hltPFdispltau_dxy'           ] = gg.hlt_pftau_displ.dxy
-            tofill_gen['tau_hltPFdispltau_dxyerr'        ] = gg.hlt_pftau_displ.dxyerr
-            tofill_gen['tau_hltPFdispltau_ip3d'          ] = gg.hlt_pftau_displ.ip3d
-            tofill_gen['tau_hltPFdispltau_ip3derr'       ] = gg.hlt_pftau_displ.ip3derr
-            tofill_gen['tau_hltPFdispltau_passChargedIso'] = gg.hlt_pftau_displ.passChargedIso
-            tofill_gen['tau_hltPFdispltau_passRelChargedIso'] = gg.hlt_pftau_displ.passRelChargedIso
-            tofill_gen['tau_hltPFdispltau_passAbsChargedIso'] = gg.hlt_pftau_displ.passAbsChargedIso
-            tofill_gen['tau_hltPFdispltau_isoval']         = gg.hlt_pftau_displ.isoVal
-            tofill_gen['tau_hltPFdispltau_passFilters']         = gg.hlt_pftau_displ.passFilters
+#            tofill_gen['tau_hltPFdispltau_dxy'              ] = gg.hlt_pftau_displ.dxy
+#            tofill_gen['tau_hltPFdispltau_dxyerr'           ] = gg.hlt_pftau_displ.dxyerr
+#            tofill_gen['tau_hltPFdispltau_ip3d'             ] = gg.hlt_pftau_displ.ip3d
+#            tofill_gen['tau_hltPFdispltau_ip3derr'          ] = gg.hlt_pftau_displ.ip3derr
+#            tofill_gen['tau_hltPFdispltau_passChargedIso'   ] = gg.hlt_pftau_displ.passChargedIso
+#            tofill_gen['tau_hltPFdispltau_passRelChargedIso'] = gg.hlt_pftau_displ.passRelChargedIso
+#            tofill_gen['tau_hltPFdispltau_passAbsChargedIso'] = gg.hlt_pftau_displ.passAbsChargedIso
+#            tofill_gen['tau_hltPFdispltau_isoval'           ] = gg.hlt_pftau_displ.isoVal
+#            tofill_gen['tau_hltPFdispltau_passFilters'      ] = gg.hlt_pftau_displ.passFilters
 
 
         tofill_gen['tau_gen_pt'        ] = gg.pt()
