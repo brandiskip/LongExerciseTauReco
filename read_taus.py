@@ -84,7 +84,7 @@ def findMatchToGen(gen_taus, hlt_taus, hlt_tau):
             setattr(gg,hlt_tau,bestcom[0])
 #             if hlt_tau=='hlt_pftau_displ':  pdb.set_trace()
             print("found one", hlt_tau)
-    return gen_taus_imatch
+    return gen_taus_match
 
 
 ##########################################################################################
@@ -305,14 +305,11 @@ for i, ev in enumerate(events):
     try:
         ev.getByLabel(label_hlt_pftaus_displ, handle_hlt_pftaus_displ)
         hlt_pftau = handle_hlt_pftaus_displ.product()
-        print("before match to gen")
 
         gen_taus = findMatchToGen(gen_taus, hlt_pftau, 'hlt_pftau_displ')
-        print("after find match to gen")
 
         for gg in gen_taus:
             if hasattr(gg, 'hlt_pftau_displ') and gg.hlt_pftau_displ:
-                print("inside for loop prior to match")
 
                 theLeadChargedCand = gg.hlt_pftau_displ.leadChargedHadrCand()
                 theLeadPFCand      = gg.hlt_pftau_displ.leadCand()
@@ -337,7 +334,7 @@ for i, ev in enumerate(events):
 
                 gg.hlt_pftau_displ.sum_pt_charged =  sum_pt_charged
                 gg.hlt_pftau_displ.sum_pt_neutral =  sum_pt_neutral
-#                print("hlt_pftau_displ collection found")
+                print("hlt_pftau_displ collection found")
     except:
         print("collection not found")
 
@@ -624,15 +621,15 @@ for i, ev in enumerate(events):
             tofill_gen['tau_hltPFdispltau_charge'   ] = gg.hlt_pftau_displ.charge()
             tofill_gen['tau_hltPFdispltau_decaymode'] = gg.hlt_pftau_displ.decayMode()
             ## new vars
-#            tofill_gen['tau_hltPFdispltau_leadChargedCandPdgId'] = gg.hlt_pftau_displ.leadChargedCandPdgId
-#            tofill_gen['tau_hltPFdispltau_leadChargedCandPt'   ] = gg.hlt_pftau_displ.leadChargedCandPt
-#            tofill_gen['tau_hltPFdispltau_leadPFCandPdgId'     ] = gg.hlt_pftau_displ.leadCandPdgId
-#            tofill_gen['tau_hltPFdispltau_leadPFCandPt'        ] = gg.hlt_pftau_displ.leadCandPt
-#            tofill_gen['tau_hltPFdispltau_maxHCALPFClusterEt'  ] = gg.hlt_pftau_displ.maxHCALPFClusterEt
-#            tofill_gen['tau_hltPFdispltau_nChargedHad'         ] = gg.hlt_pftau_displ.nChargedHad
-#            tofill_gen['tau_hltPFdispltau_nGamma'              ] = gg.hlt_pftau_displ.nGamma
-#            tofill_gen['tau_hltPFdispltau_sumPtCharged'        ] = gg.hlt_pftau_displ.sum_pt_charged
-#            tofill_gen['tau_hltPFdispltau_sumPtNeutral'        ] = gg.hlt_pftau_displ.sum_pt_neutral
+            tofill_gen['tau_hltPFdispltau_leadChargedCandPdgId'] = gg.hlt_pftau_displ.leadChargedCandPdgId
+            tofill_gen['tau_hltPFdispltau_leadChargedCandPt'   ] = gg.hlt_pftau_displ.leadChargedCandPt
+            tofill_gen['tau_hltPFdispltau_leadPFCandPdgId'     ] = gg.hlt_pftau_displ.leadCandPdgId
+            tofill_gen['tau_hltPFdispltau_leadPFCandPt'        ] = gg.hlt_pftau_displ.leadCandPt
+            tofill_gen['tau_hltPFdispltau_maxHCALPFClusterEt'  ] = gg.hlt_pftau_displ.maxHCALPFClusterEt
+            tofill_gen['tau_hltPFdispltau_nChargedHad'         ] = gg.hlt_pftau_displ.nChargedHad
+            tofill_gen['tau_hltPFdispltau_nGamma'              ] = gg.hlt_pftau_displ.nGamma
+            tofill_gen['tau_hltPFdispltau_sumPtCharged'        ] = gg.hlt_pftau_displ.sum_pt_charged
+            tofill_gen['tau_hltPFdispltau_sumPtNeutral'        ] = gg.hlt_pftau_displ.sum_pt_neutral
 
 #            tofill_gen['tau_hltPFdispltau_dxy'              ] = gg.hlt_pftau_displ.dxy
 #            tofill_gen['tau_hltPFdispltau_dxyerr'           ] = gg.hlt_pftau_displ.dxyerr
