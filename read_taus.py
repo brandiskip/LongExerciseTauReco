@@ -83,7 +83,7 @@ def findMatchToGen(gen_taus, hlt_taus, hlt_tau):
         if bestcom[0] != None and sqrt(bestcom[1]) < dR_cone :
             setattr(gg,hlt_tau,bestcom[0])
 #             if hlt_tau=='hlt_pftau_displ':  pdb.set_trace()
-            print("found one", hlt_tau)
+#            print("found one", hlt_tau)
     return gen_taus_match
 
 
@@ -120,8 +120,8 @@ handle_l1j = Handle('BXVector<l1t::Jet>')
 label_l1j  = ('caloStage2Digis','Jet','RECO')
 
 # general tracks
-label_general = ('generalTracks', '', 'RECO')
-handle_general = Handle('std::vector<reco::Track>')
+label_tracks = ('generalTracks', '', 'RECO')
+handle_tracks = Handle('std::vector<reco::Track>')
 
 # hlt pftaus
 label_hlt_pftaus_displ = ('hltHpsPFTauProducerDispl', '',  'MYHLT')
@@ -308,6 +308,11 @@ for i, ev in enumerate(events):
 
         gen_taus = findMatchToGen(gen_taus, hlt_pftau, 'hlt_pftau_displ')
 
+        for recotau in hlt_pftau:
+            if recotau.leadChargedHadrCand().isNonnull():
+                mytrk = recotau.leadChargedHadrCand().get()
+                print("collection name", mytrk.pseudoTrack().originalAlgo(), mytrk.pseudoTrack().algo())
+
         for gg in gen_taus:
             if hasattr(gg, 'hlt_pftau_displ') and gg.hlt_pftau_displ:
 
@@ -458,26 +463,32 @@ for i, ev in enumerate(events):
 
     ######################################################################################
     #access general tracks
-    ev.getByLabel(label_general, handle_general)
-    general = handle_general.product()
+    ev.getByLabel(label_tracks, handle_tracks)
+    track = handle_tracks.product()
 
-    general = [tau for tau in general if tau.pt()>15]
+    track = [tau for tau in track if tau.pt()>15]
+#    print("number of tracks",len(track))
 
     # match general tracks to gen taus
-    for rr in general : rr.gen_tau = None # first initialise the matching to None
-    for gg in gen_taus: gg.generals  = None # first initialise the matching to None
+    for rr in track : rr.gen_tau = None # first initialise the matching to None
+    for gg in gen_taus: gg.tracks  = None # first initialise the matching to None
 
     gen_taus_copy = gen_taus # we'll cyclically remove any gen taus that gets matched
 
-    for rr in general:
+    for rr in track:
         matches = [gg for gg in gen_taus_copy if deltaR(rr.momentum(), gg.visp4)<0.7 and abs(rr.pt() - gg.vispt())<0.6*gg.vispt()]
+#        print("number of matches",len(matches))
         if not len(matches):
             continue
         matches.sort(key = lambda gg : deltaR(rr.momentum(), gg.visp4))
         bestmatch = matches[0]
         rr.gen_tau = bestmatch
-        bestmatch.generals = rr
+        bestmatch.tracks = rr
         gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
+
+    for gg in gen_taus:
+        if hasattr(gg, 'tracks') and gg.tracks:  
+            print("attribute")  
 
 
     ######################################################################################
@@ -594,11 +605,11 @@ for i, ev in enumerate(events):
             tofill_gen['jet_l1_phi'      ] = gg.l1_jet.phi()
             tofill_gen['jet_l1_charge'   ] = gg.l1_jet.charge()
 
-        if hasattr(gg, 'generals') and gg.generals:
-            tofill_gen['tau_general_pt      '] = gg.generals.pt()
-            tofill_gen['tau_general_eta     '] = gg.generals.eta()
-            tofill_gen['tau_general_phi     '] = gg.generals.phi()
-            tofill_gen['tau_general_charge  '] = gg.generals.charge()
+        if hasattr(gg, 'tracks') and gg.tracks:
+            tofill_gen['tau_track_pt'      ] = gg.tracks.pt()
+            tofill_gen['tau_track_eta'     ] = gg.tracks.eta()
+            tofill_gen['tau_track_phi'     ] = gg.tracks.phi()
+            tofill_gen['tau_track_charge'  ] = gg.tracks.charge()
 
 #        if hasattr(gg, 'com_tau') and gg.com_tau:
 #            tofill_gen['tau_com_pt'       ] = gg.com_tau.pt()
@@ -661,21 +672,22 @@ for i, ev in enumerate(events):
         tofill_gen['tau_gen_vis_phi'   ] = gg.visphi()
         ntuple_gen.Fill(array('f',list(tofill_gen.values())))
 
+        # use for miniAOD
         # if reco matches gen but comtracks does not match gen, prints event ID and pt, eta, phi for gen and reco
-        if hasattr(gg, 'reco_tau') and gg.reco_tau and gg.decayMode==0:
-            if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
-                print("both")
-                print(("event_id", ev.eventAuxiliary().event()))
-                print(("gen_pt", gg.pt()))
-                print(("reco_pt",gg.reco_tau.pt()))
-            else:
-                print(("event_id", ev.eventAuxiliary().event()))
-                print(("gen_pt", gg.pt()))
-                print(("reco_pt",gg.reco_tau.pt()))
-                print(("gen_eta", gg.eta()))
-                print(("reco_eta", gg.reco_tau.eta()))
-                print(("gen_phi", gg.phi()))
-                print(("reco_phi", gg.reco_tau.phi()))
+#        if hasattr(gg, 'reco_tau') and gg.reco_tau and gg.decayMode==0:
+#            if hasattr(gg, 'up_com_tau') and gg.up_com_tau:
+#                print("both")
+#                print(("event_id", ev.eventAuxiliary().event()))
+#                print(("gen_pt", gg.pt()))
+#                print(("reco_pt",gg.reco_tau.pt()))
+#            else:
+#                print(("event_id", ev.eventAuxiliary().event()))
+#                print(("gen_pt", gg.pt()))
+#                print(("reco_pt",gg.reco_tau.pt()))
+#                print(("gen_eta", gg.eta()))
+#                print(("reco_eta", gg.reco_tau.eta()))
+#                print(("gen_phi", gg.phi()))
+#                print(("reco_phi", gg.reco_tau.phi()))
 
     # fill the ntuple: each jet makes an entry
 #     for jj in jets:
