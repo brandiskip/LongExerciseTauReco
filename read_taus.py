@@ -78,7 +78,7 @@ def findMatchToGen(gen_taus, hlt_taus, hlt_tau):
     gen_taus_match = gen_taus
     for gg in gen_taus_match:
         setattr(gg, hlt_tau, None)
-        bestcom = bestMatch(gg.visp4, hlt_taus )
+        bestcom = bestMatch(gg.visp4, hlt_taus)
         print(gg.visp4)
         if bestcom[0] != None and sqrt(bestcom[1]) < dR_cone :
             setattr(gg,hlt_tau,bestcom[0])
@@ -286,6 +286,11 @@ for i, ev in enumerate(events):
         bestmatch.reco_tau = tt
         gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
 
+    for recotau in taus:
+        if recotau.leadChargedHadrCand().isNonnull():
+            mytrk = recotau.leadChargedHadrCand().get()
+            print("collection", mytrk.pseudoTrack().originalAlgo(), mytrk.pseudoTrack().algo())
+
     ######################################################################################
     # match reco taus to reco jets
 #     for jj in jets : jj.tau = None # first initialise the matching to None
@@ -307,11 +312,6 @@ for i, ev in enumerate(events):
         hlt_pftau = handle_hlt_pftaus_displ.product()
 
         gen_taus = findMatchToGen(gen_taus, hlt_pftau, 'hlt_pftau_displ')
-
-        for recotau in hlt_pftau:
-            if recotau.leadChargedHadrCand().isNonnull():
-                mytrk = recotau.leadChargedHadrCand().get()
-                print("collection name", mytrk.pseudoTrack().originalAlgo(), mytrk.pseudoTrack().algo())
 
         for gg in gen_taus:
             if hasattr(gg, 'hlt_pftau_displ') and gg.hlt_pftau_displ:
@@ -340,6 +340,7 @@ for i, ev in enumerate(events):
                 gg.hlt_pftau_displ.sum_pt_charged =  sum_pt_charged
                 gg.hlt_pftau_displ.sum_pt_neutral =  sum_pt_neutral
                 print("hlt_pftau_displ collection found")
+
     except:
         print("collection not found")
 
