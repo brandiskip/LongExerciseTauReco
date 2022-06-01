@@ -286,10 +286,11 @@ for i, ev in enumerate(events):
         bestmatch.reco_tau = tt
         gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
 
-    for recotau in taus:
-        if recotau.leadChargedHadrCand().isNonnull():
-            mytrk = recotau.leadChargedHadrCand().get()
-            print("collection", mytrk.pseudoTrack().originalAlgo(), mytrk.pseudoTrack().algo())
+        for recotau in taus:
+            if recotau.leadChargedHadrCand().isNonnull():
+                mytrk = recotau.leadChargedHadrCand().get()
+#                pdb.set_trace()
+                print("collection", mytrk.bestTrack().originalAlgo(), mytrk.bestTrack().algo())
 
     ######################################################################################
     # match reco taus to reco jets
@@ -589,10 +590,10 @@ for i, ev in enumerate(events):
             tofill_gen['tau_reco_decaymode'] = gg.reco_tau.decayMode()
             tofill_gen['tau_reco_ip3d'     ] = gg.reco_tau.ip3d()
             tofill_gen['tau_reco_dxy'      ] = gg.reco_tau.dxy()
-            #tofill_gen['tau_reco_pixel'    ] = gg.reco_tau.leadChargedHadrCand().numberOfPixelHits()
+#            tofill_gen['tau_reco_pixel'    ] = gg.reco_tau.leadChargedHadrCand().numberOfPixelHits()
 
         if hasattr(gg, 'l1_tau') and gg.l1_tau:
-#           tofill_gen['tau_l1_mass'     ] = gg.reco_tau.mass()
+#            tofill_gen['tau_l1_mass'     ] = gg.reco_tau.mass()
             tofill_gen['tau_l1_pt'       ] = gg.l1_tau.pt()
             tofill_gen['tau_l1_eta'      ] = gg.l1_tau.eta()
             tofill_gen['tau_l1_phi'      ] = gg.l1_tau.phi()
@@ -600,7 +601,7 @@ for i, ev in enumerate(events):
             tofill_gen['tau_l1_iso'      ] = gg.l1_tau.hwIso()
 
         if hasattr(gg, 'l1_jet') and gg.l1_jet:
-#             tofill_gen['tau_l1_mass'     ] = gg.reco_tau.mass()
+#            tofill_gen['tau_l1_mass'     ] = gg.reco_tau.mass()
             tofill_gen['jet_l1_pt'       ] = gg.l1_jet.pt()
             tofill_gen['jet_l1_eta'      ] = gg.l1_jet.eta()
             tofill_gen['jet_l1_phi'      ] = gg.l1_jet.phi()
