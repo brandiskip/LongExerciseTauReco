@@ -590,11 +590,10 @@ for i, ev in enumerate(events):
             tofill_gen['tau_reco_decaymode'     ] = gg.reco_tau.decayMode()
             tofill_gen['tau_reco_ip3d'          ] = gg.reco_tau.ip3d()
             tofill_gen['tau_reco_dxy'           ] = gg.reco_tau.dxy()
-            for recotau in taus:
-                if recotau.leadChargedHadrCand().isNonnull():
-                    tofill_gen['tau_reco_origAlgo'  ] = gg.reco_tau.leadChargedHadrCand().get().bestTrack().originalAlgo()
-                    tofill_gen['tau_reco_algo'      ] = gg.reco_tau.leadChargedHadrCand().get().bestTrack().algo()
-                    print("collection", recotau.leadChargedHadrCand().get().bestTrack().originalAlgo(), recotau.leadChargedHadrCand().get().bestTrack().algo())
+            if gg.reco_tau.leadChargedHadrCand().isNonnull():
+                tofill_gen['tau_reco_origAlgo'  ] = gg.reco_tau.leadChargedHadrCand().get().bestTrack().originalAlgo()
+                tofill_gen['tau_reco_algo'      ] = gg.reco_tau.leadChargedHadrCand().get().bestTrack().algo()
+                print("collection", gg.reco_tau.leadChargedHadrCand().get().bestTrack().originalAlgo(), gg.reco_tau.leadChargedHadrCand().get().bestTrack().algo())
 #            tofill_gen['tau_reco_pixel'    ] = gg.reco_tau.leadChargedHadrCand().numberOfPixelHits()
 
         if hasattr(gg, 'l1_tau') and gg.l1_tau:
