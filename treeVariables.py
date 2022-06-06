@@ -17,6 +17,8 @@ branches = [
     'tau_reco_ip3d',
     'tau_reco_dxy',
     'tau_reco_pixel',
+    'tau_reco_origAlgo',
+    'tau_reco_algo',
     'tau_l1_pt',
     'tau_l1_eta',
     'tau_l1_phi',

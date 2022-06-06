@@ -286,11 +286,11 @@ for i, ev in enumerate(events):
         bestmatch.reco_tau = tt
         gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
 
-        for recotau in taus:
-            if recotau.leadChargedHadrCand().isNonnull():
-                mytrk = recotau.leadChargedHadrCand().get()
+#        for recotau in taus:
+#            if recotau.leadChargedHadrCand().isNonnull():
+#                mytrk = recotau.leadChargedHadrCand().get()
 #                pdb.set_trace()
-                print("collection", mytrk.bestTrack().originalAlgo(), mytrk.bestTrack().algo())
+#                print("collection", mytrk.bestTrack().originalAlgo(), mytrk.bestTrack().algo())
 
     ######################################################################################
     # match reco taus to reco jets
@@ -488,9 +488,9 @@ for i, ev in enumerate(events):
         bestmatch.tracks = rr
         gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
 
-    for gg in gen_taus:
-        if hasattr(gg, 'tracks') and gg.tracks:  
-            print("attribute")  
+#    for gg in gen_taus:
+#        if hasattr(gg, 'tracks') and gg.tracks:  
+#            print("attribute")  
 
 
     ######################################################################################
@@ -582,14 +582,19 @@ for i, ev in enumerate(events):
         tofill_gen['PV_y'              ] = vertices[0].y()
         tofill_gen['PV_z'              ] = vertices[0].z()
         if hasattr(gg, 'reco_tau') and gg.reco_tau:
-            tofill_gen['tau_reco_mass'     ] = gg.reco_tau.mass()
-            tofill_gen['tau_reco_pt'       ] = gg.reco_tau.pt()
-            tofill_gen['tau_reco_eta'      ] = gg.reco_tau.eta()
-            tofill_gen['tau_reco_phi'      ] = gg.reco_tau.phi()
-            tofill_gen['tau_reco_charge'   ] = gg.reco_tau.charge()
-            tofill_gen['tau_reco_decaymode'] = gg.reco_tau.decayMode()
-            tofill_gen['tau_reco_ip3d'     ] = gg.reco_tau.ip3d()
-            tofill_gen['tau_reco_dxy'      ] = gg.reco_tau.dxy()
+            tofill_gen['tau_reco_mass'          ] = gg.reco_tau.mass()
+            tofill_gen['tau_reco_pt'            ] = gg.reco_tau.pt()
+            tofill_gen['tau_reco_eta'           ] = gg.reco_tau.eta()
+            tofill_gen['tau_reco_phi'           ] = gg.reco_tau.phi()
+            tofill_gen['tau_reco_charge'        ] = gg.reco_tau.charge()
+            tofill_gen['tau_reco_decaymode'     ] = gg.reco_tau.decayMode()
+            tofill_gen['tau_reco_ip3d'          ] = gg.reco_tau.ip3d()
+            tofill_gen['tau_reco_dxy'           ] = gg.reco_tau.dxy()
+            for recotau in taus:
+                if recotau.leadChargedHadrCand().isNonnull():
+                    tofill_gen['tau_reco_origAlgo'  ] = gg.reco_tau.leadChargedHadrCand().get().bestTrack().originalAlgo()
+                    tofill_gen['tau_reco_algo'      ] = gg.reco_tau.leadChargedHadrCand().get().bestTrack().algo()
+                    print("collection", recotau.leadChargedHadrCand().get().bestTrack().originalAlgo(), recotau.leadChargedHadrCand().get().bestTrack().algo())
 #            tofill_gen['tau_reco_pixel'    ] = gg.reco_tau.leadChargedHadrCand().numberOfPixelHits()
 
         if hasattr(gg, 'l1_tau') and gg.l1_tau:
