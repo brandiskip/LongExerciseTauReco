@@ -71,16 +71,10 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase1_2021_realistic', '
 
 
 readFiles.extend([
-<<<<<<< HEAD
     'root://cms-xrd-global.cern.ch//store/group/phys_bphys/fiorendi/p5prime/displTaus/Staus_M_200_100mm_14TeV_Run3MC/crab_gmsb_m200_100mm_1230pre3_v33_SingleTauL1Seed_TauForPixelPt30_L2Filter30_eta2p2_dEta03_pt1p2_onAOD_v4/220616_081141/0000/outputHLT_7.root',
     'root://cms-xrd-global.cern.ch//store/group/phys_bphys/fiorendi/p5prime/displTaus/Staus_M_200_100mm_14TeV_Run3MC/crab_gmsb_m200_100mm_1230pre3_v33_SingleTauL1Seed_TauForPixelPt30_L2Filter30_eta2p2_dEta03_pt1p2_onAOD_v4/220616_081141/0000/outputHLT_8.root',
     'root://cms-xrd-global.cern.ch//store/group/phys_bphys/fiorendi/p5prime/displTaus/Staus_M_200_100mm_14TeV_Run3MC/crab_gmsb_m200_100mm_1230pre3_v33_SingleTauL1Seed_TauForPixelPt30_L2Filter30_eta2p2_dEta03_pt1p2_onAOD_v4/220616_081141/0000/outputHLT_9.root',
     'root://cms-xrd-global.cern.ch//store/group/phys_bphys/fiorendi/p5prime/displTaus/Staus_M_200_100mm_14TeV_Run3MC/crab_gmsb_m200_100mm_1230pre3_v33_SingleTauL1Seed_TauForPixelPt30_L2Filter30_eta2p2_dEta03_pt1p2_onAOD_v4/220616_081141/0000/outputHLT_10.root',
-=======
-    'root://cms-xrd-global.cern.ch//store/group/phys_bphys/fiorendi/p5prime/displTaus/Staus_M_200_100mm_14TeV_Run3MC/crab_gmsb_m200_100mm_1230pre3_v33_SingleTauL1Seed_TauForPixelPt30_L2Filter30_eta2p2_dEta03_pt1p2_onAOD_v2/220601_115736/0000/outputHLT_1.root',
-    'root://cms-xrd-global.cern.ch//store/group/phys_bphys/fiorendi/p5prime/displTaus/Staus_M_200_100mm_14TeV_Run3MC/crab_gmsb_m200_100mm_1230pre3_v33_SingleTauL1Seed_TauForPixelPt30_L2Filter30_eta2p2_dEta03_pt1p2_onAOD_v2/220601_115736/0000/outputHLT_2.root',
-    'root://cms-xrd-global.cern.ch//store/group/phys_bphys/fiorendi/p5prime/displTaus/Staus_M_200_100mm_14TeV_Run3MC/crab_gmsb_m200_100mm_1230pre3_v33_SingleTauL1Seed_TauForPixelPt30_L2Filter30_eta2p2_dEta03_pt1p2_onAOD_v2/220601_115736/0000/outputHLT_3.root',
->>>>>>> 47ea24452d22c830307a7fedf821a5ac205afc9e
     ])
 
 # limit the number of events to be processed
@@ -133,11 +127,8 @@ process.output = cms.OutputModule('PoolOutputModule',
 process.out = cms.EndPath(process.output)
 
 
-<<<<<<< HEAD
 process.output.fileName = cms.untracked.string('outputHLT_3.root')
-=======
-process.output.fileName = cms.untracked.string('/eos/user/b/bskipwor/outputHLT/1_3.root')
->>>>>>> 47ea24452d22c830307a7fedf821a5ac205afc9e
+# process.output.fileName = cms.untracked.string('/eos/user/b/bskipwor/outputHLT/1_3.root')
 process.output.outputCommands.append('keep *_genParticlePlusGeant_*_*')
 # process.output.outputComands = cms.untracked.vstring(
 #     'drop *',
