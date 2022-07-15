@@ -40,10 +40,15 @@ sample = args.sample
 
 #########################################################################################
 feat_list = ['lxy', 'dxy', 'visdxy', 'cosxy', 'momct', 'momct2d', 'mom_mass', 'pi_lxy', 'pi_cosxy' ]
+c_const = 299.792458
 mom_pdgId = [1000015]
 dR_cone = 0.1
 if 'HNL' in sample:  mom_pdgId = [9900012]
 if 'HNL' in sample and 'Dirac' in sample:  mom_pdgId = [9990012]
+if 'gmsb' in sample:  
+    mom_pdgId = [2000015, 1000015]
+    good_gen_status = 8
+if 'DY' in sample:  mom_pdgId = [23]
 
 ##########################################################################################
 # initialise output files to save the flat ntuples
@@ -62,7 +67,7 @@ infile = f.readlines()[ifile]
 
 #events = Events('root://cms-xrd-global.cern.ch/'+infile) # make sure this corresponds to your file name!
 events = Events(infile.strip()) # make sure this corresponds to your file name!
-#events = Events('/eos/user/b/bskipwor/HNL_M_5/HNL_miniAOD_1_3.root') # make sure this corresponds to your file name!
+#events = Events('/eos/user/b/bskipwor/outputHLT/HLTstau200.root') # make sure this corresponds to your file name!
 maxevents = -1 # max events to process
 totevents = events.size() # total number of events in the files
 
@@ -355,48 +360,49 @@ for i, ev in enumerate(events):
     ######################################################################################
     # find ancestor
 #     print 'event', i
-    c_const = 299.792458
-    for gg in gen_taus :
-        gg.lxy   = -9999. # first initialise to None
-        gg.myvx  = -9999. # first initialise to None
-        gg.myvy  = -9999. # first initialise to None
-        gg.myvz  = -9999. # first initialise to None
-        gg.cosxy = -9999. # first initialise to None
-        gg.momct = -9999. # first initialise to None
-        gg.momct2d  = -9999. # first initialise to None
-        gg.mom_mass = -9999. # first initialise to None
+# Commented out the two following for loops when running on AOD sample
+#    c_const = 299.792458
+#    for gg in gen_taus :
+#        gg.lxy   = -9999. # first initialise to None
+#        gg.myvx  = -9999. # first initialise to None
+#        gg.myvy  = -9999. # first initialise to None
+#        gg.myvz  = -9999. # first initialise to None
+#        gg.cosxy = -9999. # first initialise to None
+#        gg.momct = -9999. # first initialise to None
+#        gg.momct2d  = -9999. # first initialise to None
+#        gg.mom_mass = -9999. # first initialise to None
 
-    for gg in gen_taus:
+#    for gg in gen_taus:
         #tau_moms_tmp = [imom for imom in gen_particles if isAncestor(imom, gg)]
         #for imom in tau_moms_tmp:  print imom.pdgId()
-        tau_moms = [imom for imom in gen_particles if isAncestor(imom, gg) and abs(imom.pdgId())==mom_pdgId]
-        if len(tau_moms)>0 and tau_moms[0]!= None:
-            bestmom = tau_moms[0]
-
-            gg.lxy = sqrt(pow(gg.vx()-bestmom.vx(),2)+pow(gg.vy()-bestmom.vy(),2))
-            gg.myvx = bestmom.vx()
-            gg.myvy = bestmom.vy()
-            gg.myvz = bestmom.vz()
-
-            vectorP = np.array([gg.px(), gg.py(), 0])
-            vectorL = np.array([gg.vx()-bestmom.vx(), gg.vy()-bestmom.vy(), 0])
-            gg.cosxy = vectorL.dot(vectorP)/((np.linalg.norm(vectorL) * np.linalg.norm(vectorP)))
-
-            l3d = sqrt(pow(gg.vx()-bestmom.vx(),2) + pow(gg.vy()-bestmom.vy(),2) + pow(gg.vz()-bestmom.vz(),2))
+#        tau_moms = [imom for imom in gen_particles if isAncestor(imom, gg) and abs(imom.pdgId())==mom_pdgId]
+#        if len(tau_moms)>0 and tau_moms[0]!= None:
+#            bestmom = tau_moms[0]
+#
+#            gg.lxy = sqrt(pow(gg.vx()-bestmom.vx(),2)+pow(gg.vy()-bestmom.vy(),2))
+#            gg.myvx = bestmom.vx()
+#            gg.myvy = bestmom.vy()
+#            gg.myvz = bestmom.vz()
+#
+#            vectorP = np.array([gg.px(), gg.py(), 0])
+#            vectorL = np.array([gg.vx()-bestmom.vx(), gg.vy()-bestmom.vy(), 0])
+#            gg.cosxy = vectorL.dot(vectorP)/((np.linalg.norm(vectorL) * np.linalg.norm(vectorP)))
+#
+#            l3d = sqrt(pow(gg.vx()-bestmom.vx(),2) + pow(gg.vy()-bestmom.vy(),2) + pow(gg.vz()-bestmom.vz(),2))
 #             pdb.set_trace()
-            gg.momct    = c_const*l3d*bestmom.mass()/bestmom.p()
-            gg.momct2d  = c_const*gg.lxy*bestmom.mass()/bestmom.pt()
-            gg.mom_mass = bestmom.mass()
+#            gg.momct    = c_const*l3d*bestmom.mass()/bestmom.p()
+#            gg.momct2d  = c_const*gg.lxy*bestmom.mass()/bestmom.pt()
+#            gg.mom_mass = bestmom.mass()
 
-        else:
-            gg.lxy    = -9999.
-            gg.myvx   = -9999.
-            gg.myvy   = -9999.
-            gg.myvz   = -9999.
-            gg.cosxy  = -9999.
-            gg.momct  = -9999.
-            gg.momct2d  = -9999.
-            gg.mom_mass = -9999.
+#        else:
+#            gg.lxy    = -9999.
+#            gg.myvx   = -9999.
+#            gg.myvy   = -9999.
+#            gg.myvz   = -9999.
+#            gg.cosxy  = -9999.
+#            gg.momct  = -9999.
+#            gg.momct2d  = -9999.
+#            gg.mom_mass = -9999.
 
 
 
@@ -489,8 +495,8 @@ for i, ev in enumerate(events):
         gen_taus_copy = [gg for gg in gen_taus_copy if gg != bestmatch]
 
 #    for gg in gen_taus:
-#        if hasattr(gg, 'tracks') and gg.tracks:  
-#            print("attribute")  
+#        if hasattr(gg, 'tracks') and gg.tracks:
+#            print("attribute")
 
 
     ######################################################################################
@@ -571,8 +577,9 @@ for i, ev in enumerate(events):
 
     ######################################################################################
     # fill the ntuple: each gen tau makes an entry
-
     for gg in gen_taus:
+        if gg.bestmom == None or gg.dau == None:  continue
+
         for k, v in tofill_gen.items(): tofill_gen[k] = -99. # initialise before filling
         tofill_gen['run'               ] = ev.eventAuxiliary().run()
         tofill_gen['lumi'              ] = ev.eventAuxiliary().luminosityBlock()
@@ -665,9 +672,14 @@ for i, ev in enumerate(events):
         tofill_gen['tau_gen_charge'    ] = gg.charge()
         tofill_gen['tau_gen_decaymode' ] = gg.decayMode
         tofill_gen['tau_gen_lxy'       ] = gg.lxy
-        tofill_gen['tau_gen_vx'        ] = gg.myvx  ## user defined ones (mother prod. vertex)
-        tofill_gen['tau_gen_vy'        ] = gg.myvy
-        tofill_gen['tau_gen_vz'        ] = gg.myvz
+        tofill_gen['tau_gen_dxy'       ] = gg.dxy
+        tofill_gen['tau_gen_vx'        ] = gg.bestmom.vx()  ## user defined ones (mother prod. vertex)
+        tofill_gen['tau_gen_vy'        ] = gg.bestmom.vy()
+        tofill_gen['tau_gen_vz'        ] = gg.bestmom.vz()
+# Commented next three lines for AOD sample
+#        tofill_gen['tau_gen_vx'        ] = gg.myvx  ## user defined ones (mother prod. vertex)
+#        tofill_gen['tau_gen_vy'        ] = gg.myvy
+#        tofill_gen['tau_gen_vz'        ] = gg.myvz
         tofill_gen['tau_gen_cosxy'     ] = gg.cosxy
         tofill_gen['tau_gen_momct'     ] = gg.momct
         tofill_gen['tau_gen_momct2d'   ] = gg.momct2d
@@ -676,6 +688,10 @@ for i, ev in enumerate(events):
         tofill_gen['tau_gen_vis_pt'    ] = gg.vispt()
         tofill_gen['tau_gen_vis_eta'   ] = gg.viseta()
         tofill_gen['tau_gen_vis_phi'   ] = gg.visphi()
+
+        tofill_gen['tau_gen_pi_lxy'  ] = gg.pi_lxy
+        tofill_gen['tau_gen_pi_cosxy'] = gg.pi_cosxy
+
         ntuple_gen.Fill(array('f',list(tofill_gen.values())))
 
         # use for miniAOD
