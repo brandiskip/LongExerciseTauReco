@@ -38,6 +38,23 @@ def isGenHadTau(gen_tau):
     gen_tau.vismass = gen_tau.visp4.mass
     return isgentau
 
+def isGenLepTau(gen_tau, lep_id):
+    ndau = gen_tau.numberOfDaughters()
+    # identify as had decaying if no electron/muon appears as daughter
+    isgentau = sum([abs(gen_tau.daughter(dd).pdgId()) in [lep_id] for dd in range(ndau)]) == 1
+    # assign the gen tau a new attribut, visp4, 
+    # which is the visible 4-momentum of the generated tau.
+    # This is done by adding the p4's of all charged hadrons/pi0/muons/ele
+    for i,cha in enumerate([gen_tau.daughter(dd) for dd in range(ndau) if abs(gen_tau.daughter(dd).pdgId()) not in (12,14,16,22)]):
+        if i==0:
+            gen_tau.visp4 = cha.p4()
+        else:
+            gen_tau.visp4 += cha.p4()
+    gen_tau.vispt   = gen_tau.visp4.pt
+    gen_tau.viseta  = gen_tau.visp4.eta
+    gen_tau.visphi  = gen_tau.visp4.phi
+    gen_tau.vismass = gen_tau.visp4.mass
+    return isgentau
 
 
 # grab the final daughters (after any possible intermediate decay and radiative process)

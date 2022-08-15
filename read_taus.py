@@ -13,26 +13,26 @@ from DataFormats.FWLite import Events, Handle
 from PhysicsTools.HeppyCore.utils.deltar import deltaR, deltaPhi, bestMatch
 from PhysicsTools.Heppy.physicsutils.TauDecayModes import tauDecayModes
 from treeVariables import branches # here the ntuple branches are defined
-from utils import isGenHadTau, finalDaughters, printer, genDecayModeGEANT, isAncestor # utility functions
+from utils import isGenHadTau, finalDaughters, printer, genDecayModeGEANT, isAncestor, isGenLepTau # utility functions
 from math import sqrt, pow
 from copy import deepcopy as dc
 from itertools import product as itertools_product
 
 
 parser = argparse.ArgumentParser(
-		    description="Convert MiniAOD to flat ntuples!")
+            description="Convert MiniAOD to flat ntuples!")
 parser.add_argument(
-	"--sample",
-# 	choices=['ZTT','SMS', 'test'],
-	required=True,
-	help='Specify the sample you want to flatten')
+    "--sample",
+#   choices=['ZTT','SMS', 'test'],
+    required=True,
+    help='Specify the sample you want to flatten')
 
 parser.add_argument(
-	"--file",
-	required=False,
-	default=0,
-	type=int,
-	help='Specify the file number in the list from das')
+    "--file",
+    required=False,
+    default=0,
+    type=int,
+    help='Specify the file number in the list from das')
 
 args = parser.parse_args()
 ifile = args.file
@@ -40,9 +40,13 @@ sample = args.sample
 
 #########################################################################################
 feat_list = ['lxy', 'dxy', 'visdxy', 'cosxy', 'momct', 'momct2d', 'mom_mass', 'pi_lxy', 'pi_cosxy' ]
+pftau_feat_list = ['leadChargedCandPt', 'leadChargedCandPdgId', 'leadCandPt', 'leadCandPdgId', 'maxHCALPFClusterEt', 'nChargedHad', 'nGamma', 'sum_pt_charged', 'sum_pt_neutral', 'dxy', 'dxyerr', 'ip3d', 'ip3derr', 'isoVal', 'passChargedIso', 'passRelChargedIso', 'passAbsChargedIso', 'passFilters']
+ele_feat_list = ['dxy']
 c_const = 299.792458
 mom_pdgId = [1000015]
 dR_cone = 0.1
+dPt_cone = 0.2
+good_gen_status = 2
 if 'HNL' in sample:  mom_pdgId = [9900012]
 if 'HNL' in sample and 'Dirac' in sample:  mom_pdgId = [9990012]
 if 'gmsb' in sample:  
@@ -71,24 +75,15 @@ events = Events(infile.strip()) # make sure this corresponds to your file name!
 maxevents = -1 # max events to process
 totevents = events.size() # total number of events in the files
 
-def isAncestor(a, p):
-    if a == p :
-        return True
-    for i in range(0,p.numberOfMothers()):
-        if isAncestor(a,p.mother(i)):
-            return True
-    return False
-
 def findMatchToGen(gen_taus, hlt_taus, hlt_tau):
     gen_taus_match = gen_taus
     for gg in gen_taus_match:
+        # setattr() function sets the value of the attribute of an object (object, name, value), sets hlt_tau to None
         setattr(gg, hlt_tau, None)
+        # return the best match to object (gg.visp4) in hlt_taus which is closest in delta R
         bestcom = bestMatch(gg.visp4, hlt_taus)
-        print(gg.visp4)
         if bestcom[0] != None and sqrt(bestcom[1]) < dR_cone :
             setattr(gg,hlt_tau,bestcom[0])
-#             if hlt_tau=='hlt_pftau_displ':  pdb.set_trace()
-#            print("found one", hlt_tau)
     return gen_taus_match
 
 
@@ -98,57 +93,71 @@ def findMatchToGen(gen_taus, hlt_taus, hlt_tau):
 # Reminder: you can see the names of the collections stored in your input file by doing:
 # edmDumpEventContent outputFULL.root
 
-# PAT taus
-#label_taus = ('slimmedTaus', '', 'PAT')
-label_taus = ('selectedPatTaus', '', 'TAURECO')
-handle_taus = Handle('std::vector<pat::Tau>')
-
-# PAT jets
-#label_jets = ('slimmedJets', '', 'PAT')
-#handle_jets = Handle('std::vector<pat::Jet>')
-
-# gen particles
-label_gen  = ('genParticlePlusGeant', '', 'SIM')
+#gen particles
 handle_gen = Handle('std::vector<reco::GenParticle>')
-
-# AOD
-# vertices
-handle_vtx = Handle('std::vector<reco::Vertex>')
-label_vtx  = ('offlinePrimaryVertices','','RECO')
-
+#offline objects
+handle_reco_taus = Handle('std::vector<pat::Tau>')
 # L1 taus
-handle_l1 = Handle('BXVector<l1t::Tau>')
-label_l1  = ('caloStage2Digis','Tau','RECO')
-
+handle_l1_tau = Handle('BXVector<l1t::Tau>')
+handle_l1_ele = Handle('BXVector<l1t::Muon>')
+# HLT objects
+handle_hlt_taus = Handle('std::vector<reco::PFTau>')
+handle_hlt_ele  = Handle('std::vector<reco::RecoEcalCandidate>')
+#tracks
+handle_hltTracks = Handle('std::vector<reco::Track>')
+#vertices
+handle_vtx = Handle('std::vector<reco::Vertex>')
+# offline tracks
+handle_packed = Handle('std::vector<pat::PackedCandidate')
+handle_lost = Handle('std::vector<pat::PackedCandidate>')
 # L1 jet
 handle_l1j = Handle('BXVector<l1t::Jet>')
+handle_jets = Handle('std::vector<pat::Jet>')
+# HLT filters
+handle_hlt_filter = Handle('trigger::TriggerFilterObjectWithRefs')
+handle_l1ele_filter = Handle('trigger::TriggerFilterObjectWithRefs')
+handle_l3ele_filter = Handle('trigger::TriggerFilterObjectWithRefs')
+handle_isoele_filter = Handle('trigger::TriggerFilterObjectWithRefs')
+
+handles = {}
+if 'gmsb' in sample:
+    # gen particles
+    label_gen  = ('genParticlePlusGeant', '', 'SIM')
+    # HLT filters
+    handles['hlt_filter']  = [('hltHpsDisplacedMuMediumChargedIsoDisplPFTau20TrackPt1L1HLTMatchedGlob', '', 'MYHLT'), handle_hlt_filter, False]
+    handles['hlt_l1ele_filter']  = [('hltL1sSingleEGNonIsoOrWithJetAndTauNoPS', '', 'MYHLT'), handle_l1ele_filter, False]
+    handles['hlt_eg_filter']  = [('hltEGL1SingleEGNonIsoOrWithJetAndTauNoPSFilter', '', 'MYHLT'), handle_l3ele_filter, False]
+    handles['hlt_isoele_filter'] = [('hltL3crIsoL1sSingleMu22L1f0L2f10QL3f24QL3trkIsoFiltered0p07', '', 'MYHLT'), handle_isoele_filter, False]
+# PAT taus
+label_reco_taus = ('selectedPatTaus', '', 'TAURECO')
+# L1 objects
+label_l1_tau  = ('caloStage2Digis','Tau','RECO')
+label_l1_ele = ('caloStage2Digis','EGamma','RECO')
+# tracks
+label_hltTracks = ('hltMergedTracks','','MYHLT')
+# vertices
+label_vtx  = ('offlinePrimaryVertices','','RECO')
+# L1 jet
 label_l1j  = ('caloStage2Digis','Jet','RECO')
-
-# general tracks
+# gen tracks
 label_tracks = ('generalTracks', '', 'RECO')
-handle_tracks = Handle('std::vector<reco::Track>')
-
 # hlt pftaus
 label_hlt_pftaus_displ = ('hltHpsPFTauProducerDispl', '',  'MYHLT')
-handle_hlt_pftaus_displ = Handle('std::vector<reco::PFTau>')
 
-# MINIAOD
-#########################################################################################
-# gen particles
-#label_gen  = ('genParticle', '', 'SIM')
-#handle_gen = Handle('std::vector<reco::GenParticle>')
 
-# vertices
-#handle_vtx = Handle('std::vector<reco::Vertex>')
-#label_vtx  = ('offlineSlimmedPrimaryVertices','','PAT')
+if 'MINIAOD' in sample:
+    label_gen  = ('genParticle', '', 'SIM')
+    # lost tracks
+    label_lost = ('lostTracks', '', 'PAT')
+    # packed PFCandidates
+    label_packed = ('packedPFCandidates')
+    # vertices
+    label_vtx  = ('offlineSlimmedPrimaryVertices','','PAT')
+    # PAT jets
+    label_jets = ('slimmedJets', '', 'PAT')
+    # PAT taus
+    label_reco_taus = ('slimmedTaus', '', 'PAT')
 
-# lost tracks
-#label_lost = ('lostTracks', '', 'PAT')
-#handle_lost = Handle('std::vector<pat::PackedCandidate>')
-
-# packed PFCandidates
-#label_packed = ('packedPFCandidates')
-#handle_packed = Handle('std::vector<pat::PackedCandidate')
 #########################################################################################
 
 # instantiate the handles to the relevant collections.
@@ -185,8 +194,8 @@ for i, ev in enumerate(events):
 
     ######################################################################################
     # access the taus
-    ev.getByLabel(label_taus, handle_taus)
-    taus = handle_taus.product()
+    ev.getByLabel(label_reco_taus, handle_reco_taus)
+    taus = handle_reco_taus.product()
 
     # loosely filter the reco taus
     taus = [tau for tau in taus if tau.pt()>18.]
@@ -209,9 +218,9 @@ for i, ev in enumerate(events):
     ev.getByLabel (label_gen, handle_gen)
     gen_particles = handle_gen.product()
 
-    # select only hadronically decaying taus
+    # select only hadronically decaying taus for tau/tau
     gen_taus = [pp for pp in gen_particles if abs(pp.pdgId())==15 and \
-                pp.status()==8 and isGenHadTau(pp) and\
+                pp.status()==good_gen_status and isGenHadTau(pp) and\
                 pp.pt()>10 and abs(pp.eta()) < 2.1]
 
     if len(gen_taus) == 0:  continue
@@ -245,8 +254,6 @@ for i, ev in enumerate(events):
 
         if gg.bestmom == None or gg.dau == None:
             continue
-
-
 #     for gg in gen_taus:
 #         print
 #         pdb.set_trace()
@@ -273,6 +280,129 @@ for i, ev in enumerate(events):
 #             l3d = sqrt(pow(gg.vx()-bestmom.vx(),2) + pow(gg.vy()-bestmom.vy(),2) + pow(gg.vz()-bestmom.vz(),2))
 #             if bestmom.p() != 0: gg.momct    = c_const*l3d*bestmom.mass()/bestmom.p()
         if gg.bestmom.pt() != 0:  gg.momct2d = c_const*gg.lxy*gg.bestmom.mass()/gg.bestmom.pt()
+
+######################################################################################################    
+
+    # select only hadronically decaying taus for tau/ele
+    gen_had_taus = [pp for pp in gen_particles if abs(pp.pdgId())==15 and \
+                    pp.status()==good_gen_status and isGenHadTau(pp)]
+
+    # select only taus decaying to electrons
+    gen_ele_taus = [pp for pp in gen_particles if abs(pp.pdgId())==15 and \
+                    pp.status()==good_gen_status and isGenLepTau(pp, 11)]
+
+    # skip events where we do not have a tau_h + tau_ele
+    if len(gen_had_taus) < 1 or  len(gen_ele_taus) < 1 :  continue
+
+    # info about tau_h
+    for gg in gen_had_taus:
+        gg.bestmom = None
+        if gg.numberOfMothers() > 1:
+            ## print 'more than 1 one, taking first one'
+            tau_moms = [imom for imom in ev.gen_particles if isAncestor(imom, gg) and abs(imom.pdgId()) in mom_pdgId]
+            gg.bestmom = tau_moms[0]
+        elif gg.numberOfMothers() == 1 and abs(gg.mother(0).pdgId()) in mom_pdgId:
+            gg.bestmom = gg.mother(0)
+
+    # info about tau_ele
+    for gg in gen_ele_taus:
+        gg.bestmom = None
+        if gg.numberOfMothers() > 1:
+            ## print 'more than 1 one, taking first one'
+            tau_moms = [imom for imom in ev.gen_particles if isAncestor(imom, gg) and abs(imom.pdgId()) in mom_pdgId]
+            gg.bestmom = tau_moms[0]
+        elif gg.numberOfMothers() == 1 and abs(gg.mother(0).pdgId()) in mom_pdgId:
+            gg.bestmom = gg.mother(0)
+
+
+    for gg in gen_ele_taus: print(('ele mom: ', gg.bestmom.pdgId()))
+    for gg in gen_had_taus: print(('had mom: ', gg.bestmom.pdgId()))
+
+    if len(gen_ele_taus) == 0 or  len(gen_had_taus) == 0 : 
+      continue
+
+    ## temporary!
+    if len(gen_ele_taus) > 1 : 
+      print('more than one gen ele tau')
+      continue
+    if len(gen_had_taus) > 1 : 
+      print('more than one gen had tau')
+      continue
+      
+    
+    if gen_ele_taus[0].bestmom.pdgId() != -gen_had_taus[0].bestmom.pdgId() :
+      print('tau_ele and tau_had coming from different moms')
+
+    #######################################################################
+    # save variables for tau->ele
+    for gg in gen_ele_taus:
+        for ifeat in feat_list:
+            setattr(gg, ifeat, -9999.)
+
+        gg.bestmom = None
+        if gg.numberOfMothers() > 1:
+            ## print 'more than 1 one, taking first one'
+            tau_moms = [imom for imom in ev.gen_particles if isAncestor(imom, gg) and abs(imom.pdgId()) in mom_pdgId]
+            gg.bestmom = tau_moms[0]
+        elif gg.numberOfMothers() == 1 and abs(gg.mother(0).pdgId()) in mom_pdgId:
+            gg.bestmom = gg.mother(0)
+
+        ### find first dau to be used for vertices 
+        gg.dau = None
+        if gg.numberOfDaughters() > 0:  gg.dau = gg.daughter(0)
+        if gg.dau == None:  print ('is none')
+
+        if gg.bestmom == None or gg.dau == None:
+            continue
+        
+        gg.dxy = (gg.dau.vy()*gg.px() - gg.dau.vx()*gg.py())/gg.pt()
+
+        if 'taugun' in sample:
+            gg.lxy = sqrt(pow(gg.dau.vx(),2)+pow(gg.dau.vy(),2))
+        else:    
+            gg.lxy = sqrt(pow(gg.vx()-gg.bestmom.vx(),2)+pow(gg.vy()-gg.bestmom.vy(),2))
+
+        vectorP = np.array([gg.px(), gg.py(), 0])
+        vectorL = np.array([gg.vx()-gg.bestmom.vx(), gg.vy()-gg.bestmom.vy(), 0])
+        gg.cosxy = vectorL.dot(vectorP)/((np.linalg.norm(vectorL) * np.linalg.norm(vectorP)))
+
+
+    #######################################################################
+    # save variables for tau->had
+    for gg in gen_had_taus:
+
+        ## reset other attributes
+        for ifeat in feat_list:
+            setattr(gg, ifeat, -9999.)
+
+        gg.decayMode = tauDecayModes.genDecayModeInt([d for d in finalDaughters(gg) \
+                                                      if abs(d.pdgId()) not in [12, 14, 16]])
+        if 'gmsb' in sample:
+            dm_string = genDecayModeGEANT( [d for d in finalDaughters(gg) if abs(d.pdgId()) not in [12, 14, 16]])
+            gg.decayMode = tauDecayModes.nameToInt(dm_string)
+        ### find first dau to be used for vertices 
+        gg.dau = None
+        if gg.numberOfDaughters() > 0:  gg.dau = gg.daughter(0)
+        if gg.dau == None:  print ('is none')
+        gg.dxy = (gg.dau.vy()*gg.px() - gg.dau.vx()*gg.py())/gg.pt()
+        gg.lxy = sqrt(pow(gg.vx()-gg.bestmom.vx(),2)+pow(gg.vy()-gg.bestmom.vy(),2))
+        vectorP = np.array([gg.px(), gg.py(), 0])
+        vectorL = np.array([gg.vx()-gg.bestmom.vx(), gg.vy()-gg.bestmom.vy(), 0])
+        gg.cosxy = vectorL.dot(vectorP)/((np.linalg.norm(vectorL) * np.linalg.norm(vectorP)))
+
+    ######################################################################################
+    # access the hlt filters
+    if handles['hlt_l1ele_filter'][2]:  
+        ele_filter_product = ev.hlt_l1ele_filter.l1tegammaRefs()
+        gen_ele_taus = findMatchToGen(gen_ele_taus, ele_filter_product, 'l1_ele')
+
+    if handles['hlt_eg_filter'][2]:  
+        ele_filter_product = ev.hlt_eg_filter.electronRefs()
+        gen_ele_taus = findMatchToGen(gen_ele_taus, ele_filter_product, 'egamma')
+# 
+#     if handles['hlt_isoele_filter'][2]:  
+#         ele_filter_product = ev.hlt_isoele_filter.eleonRefs()
+#         gen_ele_taus = findMatchToGen(gen_ele_taus, ele_filter_product, 'iso_ele')
 
     ######################################################################################
     # match reco taus to gen taus
@@ -314,8 +444,8 @@ for i, ev in enumerate(events):
 
     ######################################################################################
     try:
-        ev.getByLabel(label_hlt_pftaus_displ, handle_hlt_pftaus_displ)
-        hlt_pftau = handle_hlt_pftaus_displ.product()
+        ev.getByLabel(label_hlt_pftaus_displ, handle_hlt_taus)
+        hlt_pftau = handle_hlt_taus.product()
 
         gen_taus = findMatchToGen(gen_taus, hlt_pftau, 'hlt_pftau_displ')
 
@@ -360,49 +490,46 @@ for i, ev in enumerate(events):
     ######################################################################################
     # find ancestor
 #     print 'event', i
-# Commented out the two following for loops when running on AOD sample
-#    c_const = 299.792458
-#    for gg in gen_taus :
-#        gg.lxy   = -9999. # first initialise to None
-#        gg.myvx  = -9999. # first initialise to None
-#        gg.myvy  = -9999. # first initialise to None
-#        gg.myvz  = -9999. # first initialise to None
-#        gg.cosxy = -9999. # first initialise to None
-#        gg.momct = -9999. # first initialise to None
-#        gg.momct2d  = -9999. # first initialise to None
-#        gg.mom_mass = -9999. # first initialise to None
+    if 'MINIAOD' in sample:
+        for gg in gen_taus :
+            gg.lxy   = -9999. # first initialise to None
+            gg.myvx  = -9999. # first initialise to None
+            gg.myvy  = -9999. # first initialise to None
+            gg.myvz  = -9999. # first initialise to None
+            gg.cosxy = -9999. # first initialise to None
+            gg.momct = -9999. # first initialise to None
+            gg.momct2d  = -9999. # first initialise to None
+            gg.mom_mass = -9999. # first initialise to None
+        for gg in gen_taus:
+            #tau_moms_tmp = [imom for imom in gen_particles if isAncestor(imom, gg)]
+            #for imom in tau_moms_tmp:  print imom.pdgId()
+            tau_moms = [imom for imom in gen_particles if isAncestor(imom, gg) and abs(imom.pdgId())==mom_pdgId]
+            if len(tau_moms)>0 and tau_moms[0]!= None:
+                bestmom = tau_moms[0]
 
-#    for gg in gen_taus:
-        #tau_moms_tmp = [imom for imom in gen_particles if isAncestor(imom, gg)]
-        #for imom in tau_moms_tmp:  print imom.pdgId()
-#        tau_moms = [imom for imom in gen_particles if isAncestor(imom, gg) and abs(imom.pdgId())==mom_pdgId]
-#        if len(tau_moms)>0 and tau_moms[0]!= None:
-#            bestmom = tau_moms[0]
-#
-#            gg.lxy = sqrt(pow(gg.vx()-bestmom.vx(),2)+pow(gg.vy()-bestmom.vy(),2))
-#            gg.myvx = bestmom.vx()
-#            gg.myvy = bestmom.vy()
-#            gg.myvz = bestmom.vz()
-#
-#            vectorP = np.array([gg.px(), gg.py(), 0])
-#            vectorL = np.array([gg.vx()-bestmom.vx(), gg.vy()-bestmom.vy(), 0])
-#            gg.cosxy = vectorL.dot(vectorP)/((np.linalg.norm(vectorL) * np.linalg.norm(vectorP)))
-#
-#            l3d = sqrt(pow(gg.vx()-bestmom.vx(),2) + pow(gg.vy()-bestmom.vy(),2) + pow(gg.vz()-bestmom.vz(),2))
-#             pdb.set_trace()
-#            gg.momct    = c_const*l3d*bestmom.mass()/bestmom.p()
-#            gg.momct2d  = c_const*gg.lxy*bestmom.mass()/bestmom.pt()
-#            gg.mom_mass = bestmom.mass()
+                gg.lxy = sqrt(pow(gg.vx()-bestmom.vx(),2)+pow(gg.vy()-bestmom.vy(),2))
+                gg.myvx = bestmom.vx()
+                gg.myvy = bestmom.vy()
+                gg.myvz = bestmom.vz()
 
-#        else:
-#            gg.lxy    = -9999.
-#            gg.myvx   = -9999.
-#            gg.myvy   = -9999.
-#            gg.myvz   = -9999.
-#            gg.cosxy  = -9999.
-#            gg.momct  = -9999.
-#            gg.momct2d  = -9999.
-#            gg.mom_mass = -9999.
+                vectorP = np.array([gg.px(), gg.py(), 0])
+                vectorL = np.array([gg.vx()-bestmom.vx(), gg.vy()-bestmom.vy(), 0])
+                gg.cosxy = vectorL.dot(vectorP)/((np.linalg.norm(vectorL) * np.linalg.norm(vectorP)))
+
+                l3d = sqrt(pow(gg.vx()-bestmom.vx(),2) + pow(gg.vy()-bestmom.vy(),2) + pow(gg.vz()-bestmom.vz(),2))
+                #pdb.set_trace()
+                gg.momct    = c_const*l3d*bestmom.mass()/bestmom.p()
+                gg.momct2d  = c_const*gg.lxy*bestmom.mass()/bestmom.pt()
+                gg.mom_mass = bestmom.mass()
+            else:
+                gg.lxy    = -9999.
+                gg.myvx   = -9999.
+                gg.myvy   = -9999.
+                gg.myvz   = -9999.
+                gg.cosxy  = -9999.
+                gg.momct  = -9999.
+                gg.momct2d  = -9999.
+                gg.mom_mass = -9999.
 
 
 
@@ -419,8 +546,8 @@ for i, ev in enumerate(events):
 
     ######################################################################################
     # access the l1 taus
-    ev.getByLabel (label_l1, handle_l1)
-    l1_taus = handle_l1.product()
+    ev.getByLabel (label_l1_tau, handle_l1_tau)
+    l1_taus = handle_l1_tau.product()
 
     l1_taus = [tau for tau in l1_taus if l1_taus.getFirstBX()==0]
     l1_taus = [tau for tau in l1_taus if tau.pt()>15.]
@@ -471,8 +598,8 @@ for i, ev in enumerate(events):
 
     ######################################################################################
     #access general tracks
-    ev.getByLabel(label_tracks, handle_tracks)
-    track = handle_tracks.product()
+    ev.getByLabel(label_tracks, handle_hltTracks)
+    track = handle_hltTracks.product()
 
     track = [tau for tau in track if tau.pt()>15]
 #    print("number of tracks",len(track))
@@ -710,6 +837,57 @@ for i, ev in enumerate(events):
 #                print(("reco_eta", gg.reco_tau.eta()))
 #                print(("gen_phi", gg.phi()))
 #                print(("reco_phi", gg.reco_tau.phi()))
+
+    # fill the ntuple: each gen tau makes an entry
+    for gg in gen_ele_taus:
+        if gg.bestmom == None or gg.dau == None:  continue
+
+        for k, v in tofill_gen.items(): tofill_gen[k] = -99. # initialise before filling
+        tofill_gen['run'               ] = ev.eventAuxiliary().run()
+        tofill_gen['lumi'              ] = ev.eventAuxiliary().luminosityBlock()
+        tofill_gen['event'             ] = ev.eventAuxiliary().event()
+
+        tofill_gen['gen_ele_ndau'      ] = gg.numberOfDaughters()
+        tofill_gen['gen_ele_pt'        ] = gg.pt()
+        tofill_gen['gen_ele_eta'       ] = gg.eta()
+        tofill_gen['gen_ele_phi'       ] = gg.phi()
+        tofill_gen['gen_ele_charge'    ] = gg.charge()
+        tofill_gen['gen_ele_lxy'       ] = gg.lxy
+        tofill_gen['gen_ele_dxy'       ] = gg.dxy
+        tofill_gen['gen_ele_vx'        ] = gg.bestmom.vx()  ## user defined ones (mother prod. vertex)
+        tofill_gen['gen_ele_vy'        ] = gg.bestmom.vy()
+        tofill_gen['gen_ele_vz'        ] = gg.bestmom.vz()
+        tofill_gen['gen_ele_cosxy'     ] = gg.cosxy
+        tofill_gen['gen_ele_mom_mass'  ] = gg.bestmom.mass()
+        tofill_gen['gen_ele_mom_pt'    ] = gg.bestmom.pt()
+        tofill_gen['gen_ele_mom_eta'   ] = gg.bestmom.eta()
+        tofill_gen['gen_ele_mom_phi'   ] = gg.bestmom.phi()
+        tofill_gen['gen_ele_momct2d'   ] = gg.momct2d
+        tofill_gen['gen_ele_vis_mass'  ] = gg.vismass()
+        tofill_gen['gen_ele_vis_pt'    ] = gg.vispt()
+        tofill_gen['gen_ele_vis_eta'   ] = gg.viseta()
+        tofill_gen['gen_ele_vis_phi'   ] = gg.visphi()
+
+        if hasattr(gg, 'l1_ele') and gg.l1_ele:
+
+            tofill_gen['l1_ele_pt'       ] = gg.l1_ele.pt()
+            tofill_gen['l1_ele_eta'      ] = gg.l1_ele.eta()
+            tofill_gen['l1_ele_phi'      ] = gg.l1_ele.phi()
+            tofill_gen['l1_ele_charge'   ] = gg.l1_ele.charge()
+
+        if hasattr(gg, 'egamma') and gg.egamma:
+            tofill_gen['hlt_ele_pt'       ] = gg.egamma.pt()
+            tofill_gen['hlt_ele_eta'      ] = gg.egamma.eta()
+            tofill_gen['hlt_ele_phi'      ] = gg.egamma.phi()
+            tofill_gen['hlt_ele_charge'   ] = gg.egamma.charge()
+
+#         if hasattr(gg, 'iso_ele') and gg.iso_ele:
+#             tofill_gen['filter_ele_pt'       ] = gg.iso_ele.pt()
+#             tofill_gen['filter_ele_eta'      ] = gg.iso_ele.eta()
+#             tofill_gen['filter_ele_phi'      ] = gg.iso_ele.phi()
+#             tofill_gen['filter_ele_charge'   ] = gg.iso_ele.charge()
+# 
+        ntuple_gen.Fill(array('f',tofill_gen.values()))
 
     # fill the ntuple: each jet makes an entry
 #     for jj in jets:
